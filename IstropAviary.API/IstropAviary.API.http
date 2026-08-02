@@ -1,0 +1,6 @@
+@IstropAviary.API_HostAddress = http://localhost:5010
+
+GET {{IstropAviary.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
