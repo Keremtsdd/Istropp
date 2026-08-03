@@ -4,38 +4,41 @@ import {
   Home, Plus, Search, Filter, LayoutGrid, 
   MoreHorizontal, Calendar, Info, Egg
 } from 'lucide-react';
+import { useData } from '../context/DataContext';
+import NestModal from '../components/modals/NestModal';
 
 const Nests = () => {
-  const [nests, setNests] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { nests, setNests } = useData();
+  const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchNests();
+    if (nests.length === 0) {
+      setNests([
+        { id: 1, nestCode: 'N01', status: 'Aktif', maleBand: '2026-001', femaleBand: '2026-002', eggs: 2, chicks: 0, progress: 10, totalDays: 21, nextAction: '3. yumurta bekleniyor', nextActionTime: 'Yarın' },
+        { id: 2, nestCode: 'N02', status: 'Yavrulu', maleBand: '2026-003', femaleBand: '2026-004', eggs: 0, chicks: 3, progress: 21, totalDays: 21, nextAction: 'Bilezik takılacak (3 yavru)', nextActionTime: '3 Gün Sonra' },
+        { id: 3, nestCode: 'N03', status: 'Hazırlık', maleBand: '2026-005', femaleBand: '2026-006', eggs: 0, chicks: 0, progress: 0, totalDays: 21, nextAction: 'Çift yerleştirilecek', nextActionTime: 'Bugün' },
+        { id: 4, nestCode: 'N04', status: 'Boş', maleBand: '-', femaleBand: '-', eggs: 0, chicks: 0, progress: 0, totalDays: 0, nextAction: 'Çift bekleniyor', nextActionTime: '-' },
+        { id: 5, nestCode: 'N05', status: 'Aktif', maleBand: '2026-009', femaleBand: '2026-010', eggs: 4, chicks: 1, progress: 18, totalDays: 21, nextAction: 'Tahmini çıkım', nextActionTime: '3 Gün Sonra' },
+        { id: 6, nestCode: 'N06', status: 'Yavrulu', maleBand: '2026-011', femaleBand: '2026-012', eggs: 0, chicks: 4, progress: 21, totalDays: 21, nextAction: 'Yuvadan atlama', nextActionTime: '10 Gün Sonra' },
+        { id: 7, nestCode: 'N07', status: 'Boş', maleBand: '-', femaleBand: '-', eggs: 0, chicks: 0, progress: 0, totalDays: 0, nextAction: 'Temizlik planlandı', nextActionTime: 'Yarın' },
+        { id: 8, nestCode: 'N08', status: 'Hazırlık', maleBand: '2026-015', femaleBand: '2026-016', eggs: 0, chicks: 0, progress: 0, totalDays: 21, nextAction: 'Yuvalık takılacak', nextActionTime: 'Bugün' },
+      ]);
+    }
   }, []);
 
-  const fetchNests = async () => {
-    try {
-      const response = await axiosClient.get('/nests');
-      // Tasarımın tam görünebilmesi için eğer veri boşsa örnek (mock) veriler yüklüyoruz.
-      if (response.data.length === 0) {
-        setNests([
-          { id: 1, nestCode: 'N01', status: 'Aktif', maleBand: '2026-001', femaleBand: '2026-002', eggs: 2, chicks: 0, progress: 10, totalDays: 21, nextAction: '3. yumurta bekleniyor', nextActionTime: 'Yarın' },
-          { id: 2, nestCode: 'N02', status: 'Yavrulu', maleBand: '2026-003', femaleBand: '2026-004', eggs: 0, chicks: 3, progress: 21, totalDays: 21, nextAction: 'Bilezik takılacak (3 yavru)', nextActionTime: '3 Gün Sonra' },
-          { id: 3, nestCode: 'N03', status: 'Hazırlık', maleBand: '2026-005', femaleBand: '2026-006', eggs: 0, chicks: 0, progress: 0, totalDays: 21, nextAction: 'Çift yerleştirilecek', nextActionTime: 'Bugün' },
-          { id: 4, nestCode: 'N04', status: 'Boş', maleBand: '-', femaleBand: '-', eggs: 0, chicks: 0, progress: 0, totalDays: 0, nextAction: 'Çift bekleniyor', nextActionTime: '-' },
-          { id: 5, nestCode: 'N05', status: 'Aktif', maleBand: '2026-009', femaleBand: '2026-010', eggs: 4, chicks: 1, progress: 18, totalDays: 21, nextAction: 'Tahmini çıkım', nextActionTime: '3 Gün Sonra' },
-          { id: 6, nestCode: 'N06', status: 'Yavrulu', maleBand: '2026-011', femaleBand: '2026-012', eggs: 0, chicks: 4, progress: 21, totalDays: 21, nextAction: 'Yuvadan atlama', nextActionTime: '10 Gün Sonra' },
-          { id: 7, nestCode: 'N07', status: 'Boş', maleBand: '-', femaleBand: '-', eggs: 0, chicks: 0, progress: 0, totalDays: 0, nextAction: 'Temizlik planlandı', nextActionTime: 'Yarın' },
-          { id: 8, nestCode: 'N08', status: 'Hazırlık', maleBand: '2026-015', femaleBand: '2026-016', eggs: 0, chicks: 0, progress: 0, totalDays: 21, nextAction: 'Yuvalık takılacak', nextActionTime: 'Bugün' },
-        ]);
-      } else {
-        setNests(response.data);
-      }
-    } catch (error) {
-      console.error('Yuvalıklar getirilemedi', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleAddNest = (nestData) => {
+    const newNest = {
+      ...nestData,
+      id: Date.now(),
+      maleBand: '-',
+      femaleBand: '-',
+      eggs: 0,
+      chicks: 0,
+      progress: 0,
+      totalDays: 0
+    };
+    setNests(prev => [...prev, newNest]);
   };
 
   const getStatusColor = (status) => {
@@ -67,7 +70,10 @@ const Nests = () => {
           />
         </div>
 
-        <button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm shadow-blue-200 min-w-max">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm shadow-blue-200 min-w-max"
+        >
           <Plus size={18} /> Yeni Yuvalık
         </button>
       </div>
@@ -217,6 +223,11 @@ const Nests = () => {
         </div>
       </div>
 
+      <NestModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleAddNest}
+      />
     </div>
   );
 };

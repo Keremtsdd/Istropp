@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { DataProvider } from './context/DataContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Layouts
@@ -19,8 +20,9 @@ import Settings from './pages/Settings';
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
+      <DataProvider>
+        <Router>
+          <Routes>
           <Route path="/login" element={<Login />} />
           
           <Route element={<ProtectedRoute />}>
@@ -38,6 +40,7 @@ function App() {
           </Route>
         </Routes>
       </Router>
+      </DataProvider>
     </AuthProvider>
   );
 }

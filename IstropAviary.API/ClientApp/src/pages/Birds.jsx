@@ -1,28 +1,31 @@
-import { useState, useEffect } from 'react';
-import axiosClient from '../api/axiosClient';
+import { useState } from 'react';
+import { useData } from '../context/DataContext';
 import { 
   Search, Plus, MoreVertical, List, LayoutGrid, 
   ChevronDown, RefreshCcw, ChevronLeft, ChevronRight
 } from 'lucide-react';
+import BirdModal from '../components/modals/BirdModal';
+import BirdDetail from '../components/birds/BirdDetail';
 
 const Birds = () => {
-  const [birds, setBirds] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { birds, addBird } = useData();
+  const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBird, setSelectedBird] = useState(null);
 
-  useEffect(() => {
-    fetchBirds();
-  }, []);
+  if (selectedBird) {
+    return <BirdDetail bird={selectedBird} onBack={() => setSelectedBird(null)} />;
+  }
 
-  const fetchBirds = async () => {
+  const handleAddBird = async (birdData) => {
     try {
-      const response = await axiosClient.get('/birds');
-      // For mock purposes if the API is empty we could set some fake data, but let's stick to API data.
-      setBirds(response.data);
+      // API call replaced with Context state update
+      addBird(birdData);
+      // alert('Kuş eklendi!');
     } catch (error) {
-      console.error('Kuşlar getirilemedi', error);
-    } finally {
-      setLoading(false);
+      console.error("Kuş eklenirken hata oluştu:", error);
+      throw error; 
     }
   };
 
@@ -87,7 +90,10 @@ const Birds = () => {
               <LayoutGrid size={16} /> Kart
             </button>
           </div>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm shadow-blue-200">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm shadow-blue-200"
+          >
             <Plus size={18} /> Yeni Kuş
           </button>
         </div>
@@ -173,8 +179,12 @@ const Birds = () => {
                   const isMale = bird.gender === 0;
 
                   return (
-                    <tr key={bird.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-4">
+                    <tr 
+                      key={bird.id} 
+                      className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                      onClick={() => setSelectedBird(bird)}
+                    >
+                      <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
                         <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
                       </td>
                       <td className="px-4 py-4">
@@ -258,6 +268,13 @@ const Birds = () => {
           </div>
         )}
       </div>
+
+      <BirdModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleAddBird}
+        birdsList={birds}
+      />
     </div>
   );
 };

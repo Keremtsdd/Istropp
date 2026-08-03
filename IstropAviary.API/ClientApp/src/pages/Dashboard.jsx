@@ -16,7 +16,8 @@ const Dashboard = () => {
     activeNests: 0,
     monthlySales: 0,
     netProfit: 0,
-    upcomingCarePlans: []
+    upcomingCarePlans: [],
+    todayTasks: []
   });
   const [loading, setLoading] = useState(true);
 
@@ -47,39 +48,7 @@ const Dashboard = () => {
         <p className="text-slate-500 mt-2">Bugün seni bekleyen işlemler</p>
       </div>
 
-      {/* Bugün */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 text-slate-800 font-bold mb-4 text-lg">
-          <Calendar size={22} />
-          <h3>Bugün</h3>
-        </div>
-
-        {data.upcomingCarePlans.length === 0 ? (
-          <div className="bg-white rounded-2xl p-6 border border-slate-100 text-center text-slate-500 shadow-sm">
-            Bugün için planlanan işlem yok.
-          </div>
-        ) : (
-          data.upcomingCarePlans.map((plan, i) => (
-            <div key={plan.id} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center justify-between hover:border-blue-200 transition-colors cursor-pointer group">
-              <div className="flex items-center gap-5">
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
-                  i % 3 === 0 ? 'bg-blue-50 text-blue-500' : 
-                  i % 3 === 1 ? 'bg-orange-50 text-orange-500' : 'bg-green-50 text-green-500'
-                }`}>
-                  {i % 3 === 0 ? <Droplet size={26} /> : i % 3 === 1 ? <Egg size={26} /> : <CheckCircle size={26} />}
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-800 text-lg">{plan.taskName}</h4>
-                  <p className="text-slate-500 text-sm">{plan.assignedTo} {plan.relatedNestCode ? `(${plan.relatedNestCode})` : ''}</p>
-                </div>
-              </div>
-              <ChevronRight className="text-slate-300 group-hover:text-blue-500 transition-colors" />
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Hızlı İşlemler */}
+      {/* Hızlı İşlemler (En Üst) */}
       <div>
         <div className="flex items-center gap-2 text-slate-800 font-bold mb-4 text-lg">
           <div className="text-slate-400 font-normal">⚡</div>
@@ -141,6 +110,51 @@ const Dashboard = () => {
           </div>
 
         </div>
+      </div>
+
+      {/* Kritik Uyarılar / Bugün Yapılacaklar */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-slate-800 font-bold mb-4 text-lg">
+          <Calendar size={22} />
+          <h3>Kritik Uyarılar & Bugün</h3>
+        </div>
+
+        {(!data.todayTasks || data.todayTasks.length === 0) ? (
+          <div className="bg-white rounded-2xl p-6 border border-slate-100 text-center text-slate-500 shadow-sm">
+            Bugün için planlanan işlem veya uyarı yok. Harika!
+          </div>
+        ) : (
+          data.todayTasks.map((task, i) => (
+            <div key={i} className={`rounded-2xl p-5 border shadow-sm flex items-center justify-between cursor-pointer group transition-colors ${
+                task.severity === 'Critical' ? 'bg-red-50 border-red-200 hover:border-red-400' :
+                task.severity === 'Warning' ? 'bg-orange-50 border-orange-200 hover:border-orange-400' :
+                'bg-blue-50 border-blue-200 hover:border-blue-400'
+            }`}>
+              <div className="flex items-center gap-5">
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center bg-white shadow-sm ${
+                    task.severity === 'Critical' ? 'text-red-500' :
+                    task.severity === 'Warning' ? 'text-orange-500' :
+                    'text-blue-500'
+                }`}>
+                  {task.type === 'Hatch' ? <Egg size={26} /> : task.type === 'Care' ? <Droplet size={26} /> : <CheckCircle size={26} />}
+                </div>
+                <div>
+                  <h4 className={`font-bold text-lg ${
+                    task.severity === 'Critical' ? 'text-red-800' :
+                    task.severity === 'Warning' ? 'text-orange-800' :
+                    'text-blue-800'
+                  }`}>{task.message}</h4>
+                  <p className={`text-sm ${
+                    task.severity === 'Critical' ? 'text-red-600' :
+                    task.severity === 'Warning' ? 'text-orange-600' :
+                    'text-blue-600'
+                  }`}>{new Date(task.date).toLocaleDateString('tr-TR')}</p>
+                </div>
+              </div>
+              <ChevronRight className="text-slate-400 opacity-50 group-hover:opacity-100 transition-opacity" />
+            </div>
+          ))
+        )}
       </div>
 
       {/* Kısayollar */}

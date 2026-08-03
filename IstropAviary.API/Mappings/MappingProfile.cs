@@ -13,7 +13,9 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.AviaryName, opt => opt.MapFrom(src => src.Aviary != null ? src.Aviary.Name : null))
             .ForMember(dest => dest.NestCode, opt => opt.MapFrom(src => src.Nest != null ? src.Nest.NestCode : null))
             .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender.ToString()))
-            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.MotherBandNumber, opt => opt.MapFrom(src => src.Mother != null ? src.Mother.BandNumber : null))
+            .ForMember(dest => dest.FatherBandNumber, opt => opt.MapFrom(src => src.Father != null ? src.Father.BandNumber : null));
 
         CreateMap<BirdCreateDto, Bird>();
 

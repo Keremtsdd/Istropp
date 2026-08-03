@@ -3,9 +3,13 @@ import {
   FileText, Printer, Plus, Search, Filter, ChevronLeft, ChevronRight,
   Calendar as CalendarIcon, Banknote, ShoppingBag, User, Phone, MapPin, Edit3
 } from 'lucide-react';
+import { useData } from '../context/DataContext';
+import SaleModal from '../components/modals/SaleModal';
 
 const Sales = () => {
+  const { sales, setSales, birds } = useData();
   const [selectedSaleId, setSelectedSaleId] = useState('S-2025-015');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Sahte (Mock) Veri Listesi
   const salesList = [
@@ -19,13 +23,30 @@ const Sales = () => {
     { id: 'S-2025-008', customer: 'Oğuzhan Polat', date: '15 Temmuz 2025', fullDate: '15 Temmuz 2025 Salı - 10:00', total: '2.000 ₺', status: 'Tamamlandı', paymentType: 'Havale', phone: '0543 222 11 00', address: 'Trabzon / Ortahisar', note: 'Damızlık erkek verildi.' },
   ];
 
-  const activeSale = salesList.find(s => s.id === selectedSaleId) || salesList[0];
+  const allSales = [...sales, ...salesList];
+  const activeSale = allSales.find(s => s.id === selectedSaleId) || allSales[0];
 
   const mockBirds = [
     { id: '2026-045', gender: 'male', mutation: 'Lutino', age: '6 Ay', price: '1.000 ₺' },
     { id: '2026-046', gender: 'male', mutation: 'Mavi', age: '6 Ay', price: '800 ₺' },
     { id: '2026-047', gender: 'female', mutation: 'Yeşil', age: '6 Ay', price: '700 ₺' },
   ];
+
+  const handleAddSale = (saleData) => {
+    const newSale = {
+      ...saleData,
+      id: `S-2026-0${allSales.length + 10}`,
+      customer: saleData.buyerName,
+      fullDate: saleData.date,
+      total: `${saleData.price} ₺`,
+      paymentType: 'Bilinmiyor',
+      phone: '-',
+      address: '-',
+      note: 'Yeni Satış'
+    };
+    setSales(prev => [newSale, ...prev]);
+    setSelectedSaleId(newSale.id);
+  };
 
   return (
     <div className="space-y-6 max-w-[1500px] mx-auto pb-10">
@@ -37,7 +58,10 @@ const Sales = () => {
           <p className="text-slate-500 mt-1">Gerçekleştirilen satışları görüntüleyin ve yeni satış ekleyin.</p>
         </div>
         <div className="flex items-center gap-3 w-full lg:w-auto">
-          <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 border border-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-sm flex-1 sm:flex-none whitespace-nowrap">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 border border-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-sm flex-1 sm:flex-none whitespace-nowrap"
+          >
             <Plus size={18} /> Yeni Satış
           </button>
           <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors font-medium shadow-sm flex-1 sm:flex-none">
@@ -72,7 +96,7 @@ const Sales = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto max-h-[600px]">
-            {salesList.map((sale) => (
+            {allSales.map((sale) => (
               <div 
                 key={sale.id}
                 onClick={() => setSelectedSaleId(sale.id)}
@@ -239,6 +263,13 @@ const Sales = () => {
         </div>
 
       </div>
+
+      <SaleModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleAddSale}
+        birds={birds}
+      />
     </div>
   );
 };

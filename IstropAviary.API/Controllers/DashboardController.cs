@@ -52,13 +52,48 @@ public class DashboardController : ControllerBase
             .Take(3)
             .ToListAsync();
 
+        var today = DateTime.UtcNow.Date;
+
+        var upcomingHatches = await _context.Clutches
+            .Include(c => c.Nest)
+            .Where(c => c.Status == EggStatus.Egg && c.HatchDate.HasValue && c.HatchDate.Value.Date >= today && c.HatchDate.Value.Date <= today.AddDays(2))
+            .ToListAsync();
+
+        var todayCarePlans = await _context.CarePlans
+            .Where(c => c.Date.Date == today)
+            .ToListAsync();
+
+        var alerts = new List<DashboardAlertDto>();
+
+        foreach(var hatch in upcomingHatches)
+        {
+            var daysLeft = (hatch.HatchDate!.Value.Date - today).Days;
+            alerts.Add(new DashboardAlertDto {
+                Type = "Hatch",
+                Message = daysLeft == 0 ? $"{hatch.Nest?.NestCode} nolu yuvada kuluçka çıkımı bugün!" : $"{hatch.Nest?.NestCode} nolu yuvada kuluçka çıkımına {daysLeft} gün kaldı.",
+                Severity = daysLeft == 0 ? "Critical" : "Warning",
+                Date = hatch.HatchDate.Value
+            });
+        }
+
+        foreach(var care in todayCarePlans)
+        {
+            alerts.Add(new DashboardAlertDto {
+                Type = "Care",
+                Message = $"Bakım Görevi: {care.Title}",
+                Severity = "Info",
+                Date = care.Date
+            });
+        }
+
         return Ok(new DashboardDto
         {
             TotalBirds = totalBirds,
             ActiveNests = activeNests,
             MonthlySales = monthlySales,
             NetProfit = monthlyIncome - monthlyExpense,
-            UpcomingCarePlans = _mapper.Map<List<CarePlanDto>>(upcomingPlans)
+            UpcomingCarePlans = _mapper.Map<List<CarePlanDto>>(upcomingPlans),
+            TodayTasks = alerts.OrderBy(a => a.Date).ToList()
         });
     }
 }

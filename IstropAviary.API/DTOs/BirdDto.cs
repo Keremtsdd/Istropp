@@ -18,6 +18,13 @@ public class BirdDto
 
     public int? NestId { get; set; }
     public string? NestCode { get; set; }
+
+    // Soy Ağacı (Pedigree)
+    public int? MotherId { get; set; }
+    public string? MotherBandNumber { get; set; }
+    
+    public int? FatherId { get; set; }
+    public string? FatherBandNumber { get; set; }
 }
 
 public class BirdCreateDto

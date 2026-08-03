@@ -51,7 +51,7 @@ const Sidebar = () => {
             <p className="text-xs text-slate-500 capitalize">{dayName}</p>
           </div>
         </div>
-        <p className="text-xs text-slate-400 mt-4 ml-2">v1.0.0</p>
+        <p className="text-xs text-slate-500 mt-4 ml-2">Signed by Kerem Taşdemir.</p>
       </div>
     </div>
   );
