@@ -72,10 +72,10 @@ const CarePlans = () => {
           <p className="text-slate-500 mt-1">Döngüsel bakım ve takviye şablonunuzu yönetin.</p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <button className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors font-medium shadow-sm flex-1 sm:flex-none">
+          <button onClick={() => window.print()} className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors font-medium shadow-sm flex-1 sm:flex-none">
             <FileText size={18} /> PDF Yazdır
           </button>
-          <button className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors font-medium shadow-sm flex-1 sm:flex-none">
+          <button onClick={() => window.print()} className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors font-medium shadow-sm flex-1 sm:flex-none">
             <Printer size={18} /> Yazdır
           </button>
           <button 

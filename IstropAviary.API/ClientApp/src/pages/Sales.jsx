@@ -7,45 +7,29 @@ import { useData } from '../context/DataContext';
 import SaleModal from '../components/modals/SaleModal';
 
 const Sales = () => {
-  const { sales, setSales, birds } = useData();
-  const [selectedSaleId, setSelectedSaleId] = useState('S-2025-015');
+  const { sales, birds, registerSale } = useData();
+  const [selectedSaleId, setSelectedSaleId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Sahte (Mock) Veri Listesi
-  const salesList = [
-    { id: 'S-2025-015', customer: 'Ahmet Yılmaz', date: '31 Temmuz 2025', fullDate: '31 Temmuz 2025 Perşembe - 11:20', total: '2.500 ₺', status: 'Tamamlandı', paymentType: 'Nakit', phone: '0532 123 45 67', address: 'İstanbul / Kadıköy', note: '2 erkek, 1 dişi. Sağlıklı ve aktif.' },
-    { id: 'S-2025-014', customer: 'Mehmet Kaya', date: '28 Temmuz 2025', fullDate: '28 Temmuz 2025 Pazartesi - 14:30', total: '1.800 ₺', status: 'Tamamlandı', paymentType: 'Kredi Kartı', phone: '0544 987 65 43', address: 'Ankara / Çankaya', note: 'Kafes ile birlikte verildi.' },
-    { id: 'S-2025-013', customer: 'Caner Demir', date: '27 Temmuz 2025', fullDate: '27 Temmuz 2025 Pazar - 10:15', total: '4.000 ₺', status: 'Tamamlandı', paymentType: 'Havale', phone: '0533 456 78 90', address: 'İzmir / Karşıyaka', note: 'Otobüs ile gönderim yapıldı.' },
-    { id: 'S-2025-012', customer: 'Burak Şahin', date: '25 Temmuz 2025', fullDate: '25 Temmuz 2025 Cuma - 16:45', total: '2.200 ₺', status: 'Tamamlandı', paymentType: 'Nakit', phone: '0555 111 22 33', address: 'Bursa / Nilüfer', note: 'Yavru yemi hediye edildi.' },
-    { id: 'S-2025-011', customer: 'Fatih Arslan', date: '22 Temmuz 2025', fullDate: '22 Temmuz 2025 Salı - 09:30', total: '1.500 ₺', status: 'Tamamlandı', paymentType: 'Havale', phone: '0532 999 88 77', address: 'Antalya / Muratpaşa', note: 'Tüyleri çok düzgün.' },
-    { id: 'S-2025-010', customer: 'Serkan Duman', date: '20 Temmuz 2025', fullDate: '20 Temmuz 2025 Pazar - 13:00', total: '3.000 ₺', status: 'Tamamlandı', paymentType: 'Nakit', phone: '0542 333 44 55', address: 'Adana / Seyhan', note: '-' },
-    { id: 'S-2025-009', customer: 'Halil Güneş', date: '18 Temmuz 2025', fullDate: '18 Temmuz 2025 Cuma - 15:20', total: '1.200 ₺', status: 'Tamamlandı', paymentType: 'Kredi Kartı', phone: '0535 666 77 88', address: 'Gaziantep / Şahinbey', note: '-' },
-    { id: 'S-2025-008', customer: 'Oğuzhan Polat', date: '15 Temmuz 2025', fullDate: '15 Temmuz 2025 Salı - 10:00', total: '2.000 ₺', status: 'Tamamlandı', paymentType: 'Havale', phone: '0543 222 11 00', address: 'Trabzon / Ortahisar', note: 'Damızlık erkek verildi.' },
-  ];
+  // Sahte mock data yerine Context'ten gelen verileri al. Eger secili yoksa ilkini sec.
+  const activeSale = sales.find(s => s.id === selectedSaleId) || sales[0];
+  
+  if (!selectedSaleId && sales.length > 0) {
+    setSelectedSaleId(sales[0].id);
+  }
 
-  const allSales = [...sales, ...salesList];
-  const activeSale = allSales.find(s => s.id === selectedSaleId) || allSales[0];
-
-  const mockBirds = [
-    { id: '2026-045', gender: 'male', mutation: 'Lutino', age: '6 Ay', price: '1.000 ₺' },
-    { id: '2026-046', gender: 'male', mutation: 'Mavi', age: '6 Ay', price: '800 ₺' },
-    { id: '2026-047', gender: 'female', mutation: 'Yeşil', age: '6 Ay', price: '700 ₺' },
-  ];
+  const mockBirds = activeSale ? birds.filter(b => b.id === activeSale.birdId).map(b => ({
+    id: b.bandNumber,
+    gender: b.gender === 0 || b.gender === '0' || b.gender === 'Erkek' ? 'male' : 'female',
+    mutation: b.mutation,
+    age: '-',
+    price: activeSale.price + ' ₺'
+  })) : [];
 
   const handleAddSale = (saleData) => {
-    const newSale = {
-      ...saleData,
-      id: `S-2026-0${allSales.length + 10}`,
-      customer: saleData.buyerName,
-      fullDate: saleData.date,
-      total: `${saleData.price} ₺`,
-      paymentType: 'Bilinmiyor',
-      phone: '-',
-      address: '-',
-      note: 'Yeni Satış'
-    };
-    setSales(prev => [newSale, ...prev]);
-    setSelectedSaleId(newSale.id);
+    registerSale(Number(saleData.birdId), saleData.buyerName, saleData.price, saleData.date);
+    // registerSale updates sales array, but to auto-select we might need to wait for render.
+    // For now we just close the modal.
   };
 
   return (
@@ -64,10 +48,10 @@ const Sales = () => {
           >
             <Plus size={18} /> Yeni Satış
           </button>
-          <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors font-medium shadow-sm flex-1 sm:flex-none">
+          <button onClick={() => window.print()} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors font-medium shadow-sm flex-1 sm:flex-none">
             <FileText size={18} /> PDF Yazdır
           </button>
-          <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors font-medium shadow-sm flex-1 sm:flex-none">
+          <button onClick={() => window.print()} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors font-medium shadow-sm flex-1 sm:flex-none">
             <Printer size={18} /> Yazdır
           </button>
         </div>
@@ -96,7 +80,9 @@ const Sales = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto max-h-[600px]">
-            {allSales.map((sale) => (
+            {sales.length === 0 ? (
+              <div className="p-10 text-center text-slate-500 text-sm">Satış kaydı bulunamadı.</div>
+            ) : sales.map((sale) => (
               <div 
                 key={sale.id}
                 onClick={() => setSelectedSaleId(sale.id)}
@@ -114,29 +100,33 @@ const Sales = () => {
                   <div className="text-sm font-medium text-slate-700 mb-1">{sale.customer}</div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-slate-800 mb-1 text-sm">{sale.total}</div>
-                  <div className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">{sale.status}</div>
+                  <div className="font-bold text-slate-800 mb-1 text-sm">{sale.price} ₺</div>
+                  <div className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Tamamlandı</div>
                 </div>
               </div>
             ))}
           </div>
 
           <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 bg-slate-50/50">
-            <span>Toplam 15 kayıt gösteriliyor.</span>
+            <span>Toplam {sales.length} kayıt gösteriliyor.</span>
             <div className="flex items-center gap-1">
               <button className="w-7 h-7 flex items-center justify-center rounded bg-blue-600 text-white font-medium">1</button>
-              <button className="w-7 h-7 flex items-center justify-center rounded hover:bg-slate-200 text-slate-600 font-medium transition-colors">2</button>
-              <button className="w-7 h-7 flex items-center justify-center rounded hover:bg-slate-200 text-slate-400 transition-colors"><ChevronRight size={16} /></button>
             </div>
           </div>
         </div>
 
         {/* Right Column - Sale Detail */}
         <div className="flex-1 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col p-6">
-          
-          <div className="flex justify-between items-center mb-6">
+          {!activeSale ? (
+             <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-4">
+               <ShoppingBag size={48} className="opacity-50" />
+               <p>Sol taraftan bir satış seçin veya yeni satış ekleyin.</p>
+             </div>
+          ) : (
+            <>
+              <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-slate-800">Satış Detayı</h3>
-            <span className="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full">{activeSale.status}</span>
+            <span className="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full">Tamamlandı</span>
           </div>
 
           {/* Info Cards Row */}
@@ -152,21 +142,21 @@ const Sales = () => {
               <div className="text-slate-400"><CalendarIcon size={24} /></div>
               <div>
                 <p className="text-xs text-slate-500 mb-0.5 font-medium">Satış Tarihi</p>
-                <p className="font-bold text-slate-800 text-xs leading-tight whitespace-pre-line">{activeSale.fullDate.replace(' - ', '\n')}</p>
+                <p className="font-bold text-slate-800 text-xs leading-tight whitespace-pre-line">{activeSale.date}</p>
               </div>
             </div>
             <div className="p-4 border border-slate-100 rounded-xl flex items-center gap-3">
               <div className="text-slate-400"><Banknote size={24} /></div>
               <div>
                 <p className="text-xs text-slate-500 mb-0.5 font-medium">Ödeme Türü</p>
-                <p className="font-bold text-slate-800">{activeSale.paymentType}</p>
+                <p className="font-bold text-slate-800">Nakit</p>
               </div>
             </div>
             <div className="p-4 border border-slate-100 rounded-xl flex items-center gap-3">
               <div className="text-slate-400"><ShoppingBag size={24} /></div>
               <div>
                 <p className="text-xs text-slate-500 mb-0.5 font-medium">Toplam Tutar</p>
-                <p className="font-bold text-green-600 text-lg">{activeSale.total}</p>
+                <p className="font-bold text-green-600 text-lg">{activeSale.price} ₺</p>
               </div>
             </div>
           </div>
@@ -182,11 +172,11 @@ const Sales = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone size={18} className="text-slate-400" />
-                  <span>{activeSale.phone}</span>
+                  <span>-</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <MapPin size={18} className="text-slate-400" />
-                  <span>{activeSale.address}</span>
+                  <span>-</span>
                 </div>
               </div>
             </div>
@@ -195,7 +185,7 @@ const Sales = () => {
               <button className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <Edit3 size={16} />
               </button>
-              <p className="text-sm text-slate-600 leading-relaxed">{activeSale.note}</p>
+              <p className="text-sm text-slate-600 leading-relaxed">-</p>
             </div>
           </div>
 
@@ -238,12 +228,12 @@ const Sales = () => {
                   <tr>
                     <td colSpan="3"></td>
                     <td className="p-3 text-right font-medium text-slate-600">Ara Toplam</td>
-                    <td className="p-3 text-right font-bold text-slate-800">{activeSale.total}</td>
+                    <td className="p-3 text-right font-bold text-slate-800">{activeSale.price} ₺</td>
                   </tr>
                   <tr className="bg-green-50/30">
                     <td colSpan="3"></td>
                     <td className="p-3 text-right font-bold text-green-700 text-base">Toplam</td>
-                    <td className="p-3 text-right font-bold text-green-700 text-lg">{activeSale.total}</td>
+                    <td className="p-3 text-right font-bold text-green-700 text-lg">{activeSale.price} ₺</td>
                   </tr>
                 </tbody>
               </table>
@@ -255,10 +245,13 @@ const Sales = () => {
              <button className="flex items-center gap-2 px-6 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors font-semibold shadow-sm">
                <Edit3 size={18} /> Düzenle
              </button>
-             <button className="flex items-center gap-2 px-6 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors font-semibold shadow-sm">
+             <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors font-semibold shadow-sm">
                <FileText size={18} /> Fatura Yazdır
              </button>
           </div>
+
+            </>
+          )}
 
         </div>
 
