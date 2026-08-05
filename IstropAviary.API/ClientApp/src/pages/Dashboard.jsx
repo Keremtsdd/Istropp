@@ -4,7 +4,9 @@ import axiosClient from '../api/axiosClient';
 import { 
   Droplet, Egg, Bird, ShoppingCart, 
   ChevronRight, Users, CheckCircle, Home, 
-  Plus, Calendar
+  Calendar, ClipboardList, DollarSign, 
+  BarChart2, Settings as SettingsIcon,
+  TrendingUp, AlertCircle, Activity
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -37,165 +39,174 @@ const Dashboard = () => {
 
   if (loading) return <div className="p-8 text-center text-slate-500">Yükleniyor...</div>;
 
+  const today = new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Navigation Hub Items
+  const navItems = [
+    { title: 'Kuşlar', desc: 'Kuş envanterini ve soyağacını yönet', icon: <Bird size={28} />, path: '/birds', color: 'bg-blue-50 text-blue-600', hover: 'hover:border-blue-200 hover:shadow-blue-100' },
+    { title: 'Yuvalıklar', desc: 'Kuluçka ve yumurta takibi yap', icon: <Home size={28} />, path: '/nests', color: 'bg-orange-50 text-orange-600', hover: 'hover:border-orange-200 hover:shadow-orange-100' },
+    { title: 'Bakım Planı', desc: 'İlaç ve beslenme takvimini düzenle', icon: <ClipboardList size={28} />, path: '/care-plans', color: 'bg-teal-50 text-teal-600', hover: 'hover:border-teal-200 hover:shadow-teal-100' },
+    { title: 'Satış', desc: 'Satışları ve rezervasyonları izle', icon: <ShoppingCart size={28} />, path: '/sales', color: 'bg-purple-50 text-purple-600', hover: 'hover:border-purple-200 hover:shadow-purple-100' },
+    { title: 'Gelir / Gider', desc: 'Finansal işlemleri kontrol et', icon: <DollarSign size={28} />, path: '/transactions', color: 'bg-green-50 text-green-600', hover: 'hover:border-green-200 hover:shadow-green-100' },
+    { title: 'Raporlar', desc: 'İşletme istatistiklerini analiz et', icon: <BarChart2 size={28} />, path: '/reports', color: 'bg-indigo-50 text-indigo-600', hover: 'hover:border-indigo-200 hover:shadow-indigo-100' },
+    { title: 'Ayarlar', desc: 'Sistem ve işletme ayarlarını yapılandır', icon: <SettingsIcon size={28} />, path: '/settings', color: 'bg-slate-100 text-slate-600', hover: 'hover:border-slate-300 hover:shadow-slate-200' },
+  ];
+
   return (
-    <div className="max-w-5xl mx-auto space-y-10 pb-10">
+    <div className="max-w-[1500px] mx-auto space-y-8 pb-12">
       
-      {/* Header */}
-      <div>
-        <h2 className="text-3xl font-bold text-slate-800 flex items-center gap-2">
-          Hoş geldin, <span className="capitalize">{user?.username || 'Yetkili'}</span> 👋
-        </h2>
-        <p className="text-slate-500 mt-2">Bugün seni bekleyen işlemler</p>
-      </div>
-
-      {/* Hızlı İşlemler (En Üst) */}
-      <div>
-        <div className="flex items-center gap-2 text-slate-800 font-bold mb-4 text-lg">
-          <div className="text-slate-400 font-normal">⚡</div>
-          <h3>Hızlı İşlemler</h3>
+      {/* Welcome Header */}
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-8 md:p-10 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
+           <Bird size={200} />
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          
-          <div onClick={() => navigate('/birds')} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center justify-between hover:border-blue-200 transition-colors cursor-pointer group">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
-                <Plus size={24} />
-              </div>
-              <div>
-                <h4 className="font-bold text-slate-800">Kuş</h4>
-                <p className="text-slate-500 text-xs mt-0.5">Yeni kuş ekle</p>
-              </div>
-            </div>
-            <ChevronRight size={18} className="text-slate-300 group-hover:text-blue-500" />
-          </div>
-
-          <div onClick={() => navigate('/nests')} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center justify-between hover:border-orange-200 transition-colors cursor-pointer group">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center text-orange-500">
-                <Egg size={24} />
-              </div>
-              <div>
-                <h4 className="font-bold text-slate-800">Yumurta</h4>
-                <p className="text-slate-500 text-xs mt-0.5">Yeni yumurta kaydı</p>
-              </div>
-            </div>
-            <ChevronRight size={18} className="text-slate-300 group-hover:text-orange-500" />
-          </div>
-
-          <div onClick={() => navigate('/nests')} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center justify-between hover:border-green-200 transition-colors cursor-pointer group">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-500">
-                <Bird size={24} />
-              </div>
-              <div>
-                <h4 className="font-bold text-slate-800">Yavru</h4>
-                <p className="text-slate-500 text-xs mt-0.5">Yeni yavru ekle</p>
-              </div>
-            </div>
-            <ChevronRight size={18} className="text-slate-300 group-hover:text-green-500" />
-          </div>
-
-          <div onClick={() => navigate('/sales')} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center justify-between hover:border-purple-200 transition-colors cursor-pointer group">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-500">
-                <ShoppingCart size={24} />
-              </div>
-              <div>
-                <h4 className="font-bold text-slate-800">Satış</h4>
-                <p className="text-slate-500 text-xs mt-0.5">Yeni satış kaydı</p>
-              </div>
-            </div>
-            <ChevronRight size={18} className="text-slate-300 group-hover:text-purple-500" />
-          </div>
-
+        <div className="relative z-10">
+          <p className="text-slate-400 font-medium mb-2">{today}</p>
+          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+            Hoş geldin, <span className="text-blue-400 capitalize">Emirhan</span>
+          </h2>
+          <p className="text-lg text-slate-300 max-w-2xl">
+            İşletmende bugün işler nasıl gidiyor? Tüm süreçlerini tek bir merkezden kolayca yönetebilirsin.
+          </p>
         </div>
       </div>
 
-      {/* Kritik Uyarılar / Bugün Yapılacaklar */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 text-slate-800 font-bold mb-4 text-lg">
-          <Calendar size={22} />
-          <h3>Kritik Uyarılar & Bugün</h3>
-        </div>
-
-        {(!data.todayTasks || data.todayTasks.length === 0) ? (
-          <div className="bg-white rounded-2xl p-6 border border-slate-100 text-center text-slate-500 shadow-sm">
-            Bugün için planlanan işlem veya uyarı yok. Harika!
+      {/* Top Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex items-center gap-5">
+          <div className="w-14 h-14 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+            <Users size={26} />
           </div>
-        ) : (
-          data.todayTasks.map((task, i) => (
-            <div key={i} className={`rounded-2xl p-5 border shadow-sm flex items-center justify-between cursor-pointer group transition-colors ${
-                task.severity === 'Critical' ? 'bg-red-50 border-red-200 hover:border-red-400' :
-                task.severity === 'Warning' ? 'bg-orange-50 border-orange-200 hover:border-orange-400' :
-                'bg-blue-50 border-blue-200 hover:border-blue-400'
-            }`}>
-              <div className="flex items-center gap-5">
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center bg-white shadow-sm ${
-                    task.severity === 'Critical' ? 'text-red-500' :
-                    task.severity === 'Warning' ? 'text-orange-500' :
-                    'text-blue-500'
-                }`}>
-                  {task.type === 'Hatch' ? <Egg size={26} /> : task.type === 'Care' ? <Droplet size={26} /> : <CheckCircle size={26} />}
-                </div>
-                <div>
-                  <h4 className={`font-bold text-lg ${
-                    task.severity === 'Critical' ? 'text-red-800' :
-                    task.severity === 'Warning' ? 'text-orange-800' :
-                    'text-blue-800'
-                  }`}>{task.message}</h4>
-                  <p className={`text-sm ${
-                    task.severity === 'Critical' ? 'text-red-600' :
-                    task.severity === 'Warning' ? 'text-orange-600' :
-                    'text-blue-600'
-                  }`}>{new Date(task.date).toLocaleDateString('tr-TR')}</p>
-                </div>
-              </div>
-              <ChevronRight className="text-slate-400 opacity-50 group-hover:opacity-100 transition-opacity" />
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Kısayollar */}
-      <div className="pt-4 border-t border-slate-200">
-        <div className="flex items-center gap-2 text-slate-500 font-semibold mb-6 text-sm">
-          ⭐ Kısayollar
+          <div>
+            <p className="text-sm text-slate-500 font-medium">Toplam Kuş</p>
+            <p className="text-2xl font-bold text-slate-800">{data.totalBirds}</p>
+          </div>
         </div>
         
-        <div className="flex flex-wrap items-center gap-16 ml-4">
-          <div className="flex items-center gap-3">
-            <Users className="text-blue-500" size={24} />
-            <div>
-              <p className="text-xs text-slate-500 font-medium">Toplam Kuş</p>
-              <p className="text-xl font-bold text-slate-800">{data.totalBirds}</p>
-            </div>
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex items-center gap-5">
+          <div className="w-14 h-14 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center shrink-0">
+            <Home size={26} />
           </div>
-
-          <div className="flex items-center gap-3">
-            <Bird className="text-green-500" size={24} />
-            <div>
-              <p className="text-xs text-slate-500 font-medium">Yeni Kayıt (Ay)</p>
-              <p className="text-xl font-bold text-slate-800">15</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Home className="text-orange-500" size={24} />
-            <div>
-              <p className="text-xs text-slate-500 font-medium">Aktif Yuvalık</p>
-              <p className="text-xl font-bold text-slate-800">{data.activeNests}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <CheckCircle className="text-purple-500" size={24} />
-            <div>
-              <p className="text-xs text-slate-500 font-medium">Planlanan İşlem</p>
-              <p className="text-xl font-bold text-slate-800">{data.upcomingCarePlans.length}</p>
-            </div>
+          <div>
+            <p className="text-sm text-slate-500 font-medium">Aktif Yuvalık</p>
+            <p className="text-2xl font-bold text-slate-800">{data.activeNests}</p>
           </div>
         </div>
+
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex items-center gap-5">
+          <div className="w-14 h-14 rounded-full bg-green-50 text-green-500 flex items-center justify-center shrink-0">
+            <TrendingUp size={26} />
+          </div>
+          <div>
+            <p className="text-sm text-slate-500 font-medium">Aylık Satış</p>
+            <p className="text-2xl font-bold text-slate-800">{data.monthlySales || '0'} ₺</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex items-center gap-5">
+          <div className="w-14 h-14 rounded-full bg-teal-50 text-teal-500 flex items-center justify-center shrink-0">
+            <Activity size={26} />
+          </div>
+          <div>
+            <p className="text-sm text-slate-500 font-medium">Aktif Planlar</p>
+            <p className="text-2xl font-bold text-slate-800">{data.upcomingCarePlans?.length || '0'}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Navigation Hub */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex items-center gap-2">
+            <h3 className="text-xl font-bold text-slate-800">Modüller</h3>
+            <span className="text-sm text-slate-400 font-medium">Hızlı Erişim</span>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {navItems.map((item, idx) => (
+              <div 
+                key={idx}
+                onClick={() => navigate(item.path)}
+                className={`bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex items-start gap-4 ${item.hover} hover:shadow-lg`}
+              >
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 duration-300 ${item.color}`}>
+                  {item.icon}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                     <h4 className="font-bold text-slate-800 text-lg group-hover:text-blue-600 transition-colors">{item.title}</h4>
+                     <ChevronRight size={18} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+                  </div>
+                  <p className="text-sm text-slate-500 leading-snug">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Critical Alerts Sidebar */}
+        <div className="space-y-6">
+           <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h3 className="text-xl font-bold text-slate-800">Bugün</h3>
+              <span className="text-sm text-slate-400 font-medium">Görevler</span>
+            </div>
+            {data.todayTasks?.length > 0 && (
+              <span className="bg-red-100 text-red-600 text-xs font-bold px-2.5 py-1 rounded-full">
+                {data.todayTasks.length} Uyarı
+              </span>
+            )}
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-2">
+            {(!data.todayTasks || data.todayTasks.length === 0) ? (
+              <div className="p-10 text-center flex flex-col items-center justify-center">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
+                  <CheckCircle size={32} />
+                </div>
+                <h4 className="text-lg font-bold text-slate-700 mb-1">Her şey yolunda!</h4>
+                <p className="text-sm text-slate-500">Bugün için planlanan acil bir işlem veya uyarı bulunmuyor.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {data.todayTasks.map((task, i) => (
+                  <div key={i} className={`p-4 rounded-2xl border flex items-start gap-4 transition-colors cursor-pointer ${
+                      task.severity === 'Critical' ? 'bg-red-50/50 border-red-100 hover:bg-red-50' :
+                      task.severity === 'Warning' ? 'bg-orange-50/50 border-orange-100 hover:bg-orange-50' :
+                      'bg-blue-50/50 border-blue-100 hover:bg-blue-50'
+                  }`}>
+                    <div className={`mt-1 shrink-0 ${
+                        task.severity === 'Critical' ? 'text-red-500' :
+                        task.severity === 'Warning' ? 'text-orange-500' :
+                        'text-blue-500'
+                    }`}>
+                      {task.type === 'Hatch' ? <Egg size={20} /> : task.type === 'Care' ? <Droplet size={20} /> : <AlertCircle size={20} />}
+                    </div>
+                    <div>
+                      <h4 className={`font-bold text-sm mb-0.5 ${
+                        task.severity === 'Critical' ? 'text-red-800' :
+                        task.severity === 'Warning' ? 'text-orange-800' :
+                        'text-blue-800'
+                      }`}>{task.message}</h4>
+                      <p className={`text-xs ${
+                        task.severity === 'Critical' ? 'text-red-600/80' :
+                        task.severity === 'Warning' ? 'text-orange-600/80' :
+                        'text-blue-600/80'
+                      }`}>{new Date(task.date).toLocaleDateString('tr-TR')}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Sürüm Bilgisi */}
+          <div className="text-center pt-4">
+             <p className="text-xs text-slate-400 font-medium">Istrop Aviary v1.0.0</p>
+          </div>
+        </div>
+
       </div>
 
     </div>
