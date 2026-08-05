@@ -21,7 +21,6 @@ const Dashboard = () => {
     upcomingCarePlans: [],
     todayTasks: []
   });
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -30,14 +29,10 @@ const Dashboard = () => {
         setData(response.data);
       } catch (error) {
         console.error("Dashboard data fetch error", error);
-      } finally {
-        setLoading(false);
       }
     };
     fetchStats();
   }, []);
-
-  if (loading) return <div className="p-8 text-center text-slate-500">Yükleniyor...</div>;
 
   const today = new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
