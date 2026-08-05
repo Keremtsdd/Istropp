@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useData } from '../context/DataContext';
 import { 
   Search, Plus, MoreVertical, List, LayoutGrid, 
@@ -6,6 +6,59 @@ import {
 } from 'lucide-react';
 import BirdModal from '../components/modals/BirdModal';
 import BirdDetail from '../components/birds/BirdDetail';
+
+const CustomDropdown = ({ icon, label, options, value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(opt => String(opt.value) === String(value));
+
+  return (
+    <div className="relative flex items-center gap-3 border border-slate-200 rounded-lg px-3 py-2 min-w-[140px] cursor-pointer hover:bg-slate-50 transition-colors"
+         ref={dropdownRef}
+         onClick={() => setIsOpen(!isOpen)}
+    >
+      <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+        {icon}
+      </div>
+      <div className="flex-1">
+        <p className="text-[11px] text-slate-500 font-medium leading-none">{label}</p>
+        <div className="text-sm text-slate-800 font-semibold mt-0.5">
+          {selectedOption ? selectedOption.label : 'Seçiniz'}
+        </div>
+      </div>
+      <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1.5 w-full min-w-[160px] bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/50 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+          {options.map((opt) => (
+            <div 
+              key={opt.value}
+              className={`px-3 py-2 text-sm cursor-pointer transition-colors ${String(value) === String(opt.value) ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700 hover:bg-slate-50'}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Birds = () => {
   const { birds, addBird } = useData();
@@ -140,70 +193,44 @@ const Birds = () => {
 
       {/* Filters Area */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-2 px-4 rounded-xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-3 overflow-x-auto w-full pb-2 sm:pb-0">
+        <div className="flex flex-wrap items-center gap-3 w-full pb-2 sm:pb-0">
           
-          {/* Filter: Durum */}
-          <div className="relative flex items-center gap-3 border border-slate-200 rounded-lg px-3 py-2 min-w-max">
-            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
-              <span className="w-2.5 h-2.5 bg-slate-400 rounded-full border border-slate-100"></span>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 font-medium leading-none">Durum</p>
-              <select 
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="text-sm text-slate-800 font-semibold bg-transparent outline-none cursor-pointer appearance-none mt-0.5"
-              >
-                <option value="Tümü">Tümü</option>
-                <option value="1">Damızlık</option>
-                <option value="2">Yavru</option>
-                <option value="4">Satılık</option>
-              </select>
-            </div>
-            <ChevronDown size={16} className="text-slate-400 ml-2" />
-          </div>
+          <CustomDropdown 
+            icon={<div className="w-2.5 h-2.5 rounded-full bg-slate-400 pointer-events-none"></div>}
+            label="Durum"
+            value={filterStatus}
+            onChange={setFilterStatus}
+            options={[
+              { value: 'Tümü', label: 'Tümü' },
+              { value: '1', label: 'Damızlık' },
+              { value: '2', label: 'Yavru' },
+              { value: '4', label: 'Satılık' }
+            ]}
+          />
 
-          {/* Filter: Cinsiyet */}
-          <div className="relative flex items-center gap-3 border border-slate-200 rounded-lg px-3 py-2 min-w-max">
-            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-              <span className="text-sm font-bold">♂♀</span>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 font-medium leading-none">Cinsiyet</p>
-              <select 
-                value={filterGender}
-                onChange={(e) => setFilterGender(e.target.value)}
-                className="text-sm text-slate-800 font-semibold bg-transparent outline-none cursor-pointer appearance-none mt-0.5"
-              >
-                <option value="Tümü">Tümü</option>
-                <option value="0">Erkek</option>
-                <option value="1">Dişi</option>
-              </select>
-            </div>
-            <ChevronDown size={16} className="text-slate-400 ml-2" />
-          </div>
+          <CustomDropdown 
+            icon={<span className="text-sm font-bold pointer-events-none">♂♀</span>}
+            label="Cinsiyet"
+            value={filterGender}
+            onChange={setFilterGender}
+            options={[
+              { value: 'Tümü', label: 'Tümü' },
+              { value: '0', label: 'Erkek' },
+              { value: '1', label: 'Dişi' }
+            ]}
+          />
 
-          {/* Filter: Yuvalık */}
-          <div className="relative flex items-center gap-3 border border-slate-200 rounded-lg px-3 py-2 min-w-max">
-            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 font-medium leading-none">Yuvalık</p>
-              <select 
-                value={filterAviary}
-                onChange={(e) => setFilterAviary(e.target.value)}
-                className="text-sm text-slate-800 font-semibold bg-transparent outline-none cursor-pointer appearance-none mt-0.5"
-              >
-                <option value="Tümü">Tümü</option>
-                <option value="Boş">Yok (Boş)</option>
-                {Array.from(new Set(birds.map(b => b.aviaryName).filter(Boolean))).map(av => (
-                  <option key={av} value={av}>{av}</option>
-                ))}
-              </select>
-            </div>
-            <ChevronDown size={16} className="text-slate-400 ml-2" />
-          </div>
+          <CustomDropdown 
+            icon={<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>}
+            label="Yuvalık"
+            value={filterAviary}
+            onChange={setFilterAviary}
+            options={[
+              { value: 'Tümü', label: 'Tümü' },
+              { value: 'Boş', label: 'Yok (Boş)' },
+              ...Array.from(new Set(birds.map(b => b.aviaryName).filter(Boolean))).map(av => ({ value: av, label: av }))
+            ]}
+          />
 
         </div>
 
@@ -380,7 +407,6 @@ const Birds = () => {
             </div>
           </div>
         )}
-      </div>
 
       <BirdModal 
         isOpen={isModalOpen}

@@ -9,15 +9,19 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState('genel');
 
   // Bildirim tab toggle states
+  const [notifEggCheck, setNotifEggCheck] = useState(true);
+  const [notifBanding, setNotifBanding] = useState(true);
   const [notifHatch, setNotifHatch] = useState(true);
+  const [notifNestClean, setNotifNestClean] = useState(true);
+  const [notifWeaning, setNotifWeaning] = useState(true);
   const [notifCare, setNotifCare] = useState(true);
-  const [notifSale, setNotifSale] = useState(false);
-  const [notifStock, setNotifStock] = useState(true);
+  const [notifQuarantine, setNotifQuarantine] = useState(false);
+  const [notifBreedingPrep, setNotifBreedingPrep] = useState(false);
+  const [notifFinance, setNotifFinance] = useState(false);
 
   const tabs = [
     { id: 'genel', icon: <Building size={18} />, label: 'Genel Bilgiler' },
     { id: 'bilezikler', icon: <Fingerprint size={18} />, label: 'Bilezikler' },
-    { id: 'yazdir', icon: <Printer size={18} />, label: 'Yazdırma' },
     { id: 'bildirimler', icon: <Bell size={18} />, label: 'Bildirimler' }
   ];
 
@@ -38,14 +42,6 @@ const Settings = () => {
         <div>
           <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Ayarlar</h2>
           <p className="text-slate-500 mt-1">Program ve işletme ayarlarınızı buradan yönetebilirsiniz.</p>
-        </div>
-        <div className="relative w-full lg:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input 
-            type="text" 
-            placeholder="Ayar ara..." 
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
-          />
         </div>
       </div>
 
@@ -137,11 +133,6 @@ const Settings = () => {
               <h3 className="text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-slate-100">Bilezik Ayarları</h3>
               <div className="max-w-2xl space-y-6">
                 <div className="grid grid-cols-2 gap-6">
-                  <div className="col-span-2">
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Bilezik Kodu (Önek)</label>
-                    <input type="text" defaultValue="TR-34 IST" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors font-medium uppercase"/>
-                    <p className="text-[11px] text-slate-400 mt-1.5">Kuşlara takılacak bileziklerde numara ve yıldan önce görünecek sabit kod.</p>
-                  </div>
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">Geçerli Yıl</label>
                     <select className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors font-medium">
@@ -157,7 +148,7 @@ const Settings = () => {
                 </div>
                 <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-4">
                    <p className="text-xs text-blue-700 font-medium mb-1">Önizleme:</p>
-                   <p className="text-xl font-mono font-bold text-slate-800">TR-34 IST 26 - 001</p>
+                   <p className="text-xl font-mono font-bold text-slate-800">2026-001</p>
                 </div>
                 <div className="flex justify-end pt-2">
                   <button className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm">
@@ -170,86 +161,97 @@ const Settings = () => {
 
 
 
-          {/* YAZDIRMA */}
-          {activeTab === 'yazdir' && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <h3 className="text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-slate-100">Yazdırma ve Fatura Ayarları</h3>
-              <div className="max-w-2xl space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kağıt Boyutu</label>
-                  <select className="w-full md:w-1/2 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors font-medium">
-                    <option value="a4" selected>A4 (Standart)</option>
-                    <option value="a5">A5</option>
-                    <option value="thermal">Termal Yazıcı Rulosu (80mm)</option>
-                  </select>
-                </div>
-                
-                <div className="flex items-center justify-between py-2 border-b border-slate-50">
-                   <div>
-                      <p className="text-sm font-semibold text-slate-700">Faturada Logoyu Göster</p>
-                      <p className="text-[11px] text-slate-400">Çıktılarda işletme logonuz sol üstte yer alır.</p>
-                   </div>
-                   <ToggleSwitch active={true} onChange={() => {}} />
-                </div>
-                
-                <div className="flex items-center justify-between py-2 border-b border-slate-50">
-                   <div>
-                      <p className="text-sm font-semibold text-slate-700">Alt Bilgi Ekle</p>
-                      <p className="text-[11px] text-slate-400">Fatura altına teşekkür yazısı veya notlar eklenir.</p>
-                   </div>
-                   <ToggleSwitch active={true} onChange={() => {}} />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Alt Bilgi (Footer) Metni</label>
-                  <textarea rows={2} defaultValue="Bizi tercih ettiğiniz için teşekkür ederiz." className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors font-medium resize-none"></textarea>
-                </div>
-                
-                <div className="flex justify-end pt-4">
-                  <button className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm">
-                    <Save size={18} /> Kaydet
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* BILDIRIMLER */}
           {activeTab === 'bildirimler' && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <h3 className="text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-slate-100">Sistem Bildirimleri</h3>
+              <h3 className="text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-slate-100">Sistem ve Hatırlatma Bildirimleri</h3>
               <div className="max-w-2xl space-y-2">
                 
-                <div className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors">
+                {/* Üretim ve Kuluçka */}
+                <div className="pt-2 pb-1">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Üretim & Kuluçka</h4>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                   <div>
+                      <p className="text-sm font-bold text-slate-700">Yumurta Döl Kontrolü</p>
+                      <p className="text-[12px] text-slate-500 mt-0.5">Kuluçkadaki yumurtaların doluluk/boşluk kontrol zamanı geldiğinde uyarır (genelde 5-7. gün).</p>
+                   </div>
+                   <ToggleSwitch active={notifEggCheck} onChange={() => setNotifEggCheck(!notifEggCheck)} />
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
                    <div>
                       <p className="text-sm font-bold text-slate-700">Yeni Kuluçka Çıkışı</p>
-                      <p className="text-[12px] text-slate-500 mt-0.5">Yavruların tahmini çıkış günlerinde uyarı alırsınız.</p>
+                      <p className="text-[12px] text-slate-500 mt-0.5">Yavruların yumurtadan tahmini çıkış günleri yaklaştığında bildirim gönderir.</p>
                    </div>
                    <ToggleSwitch active={notifHatch} onChange={() => setNotifHatch(!notifHatch)} />
                 </div>
-                
-                <div className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors">
+
+                <div className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
                    <div>
-                      <p className="text-sm font-bold text-slate-700">İlaç ve Takviye Zamanı</p>
-                      <p className="text-[12px] text-slate-500 mt-0.5">Bakım planına eklenen ilaçların günü geldiğinde bildirim alırsınız.</p>
+                      <p className="text-sm font-bold text-slate-700">Yavru Bilezikleme Zamanı</p>
+                      <p className="text-[12px] text-slate-500 mt-0.5">Yavruların ayaklarına bilezik takılma dönemi (genelde 7-10. gün) geldiğinde hatırlatır.</p>
+                   </div>
+                   <ToggleSwitch active={notifBanding} onChange={() => setNotifBanding(!notifBanding)} />
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                   <div>
+                      <p className="text-sm font-bold text-slate-700">Yavru Ayırma (Yeme Düşme)</p>
+                      <p className="text-[12px] text-slate-500 mt-0.5">Yavruların yeme düşme ve anne-babadan ayrılma vakti geldiğinde uyarır (genelde 30-35. gün).</p>
+                   </div>
+                   <ToggleSwitch active={notifWeaning} onChange={() => setNotifWeaning(!notifWeaning)} />
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                   <div>
+                      <p className="text-sm font-bold text-slate-700">Eşleştirme Hazırlığı</p>
+                      <p className="text-[12px] text-slate-500 mt-0.5">Dinlenmedeki kuşların tekrar eşe atılma ve kuluçka hazırlığı zamanı geldiğinde hatırlatır.</p>
+                   </div>
+                   <ToggleSwitch active={notifBreedingPrep} onChange={() => setNotifBreedingPrep(!notifBreedingPrep)} />
+                </div>
+
+                {/* Bakım ve Sağlık */}
+                <div className="pt-6 pb-1">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Bakım & Sağlık</h4>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                   <div>
+                      <p className="text-sm font-bold text-slate-700">İlaç ve Takviye Programı</p>
+                      <p className="text-[12px] text-slate-500 mt-0.5">Kuşlara verilmesi gereken periyodik vitamin veya ilaç günlerinde uyarır.</p>
                    </div>
                    <ToggleSwitch active={notifCare} onChange={() => setNotifCare(!notifCare)} />
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors">
+                <div className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
                    <div>
-                      <p className="text-sm font-bold text-slate-700">Satış Onayları</p>
-                      <p className="text-[12px] text-slate-500 mt-0.5">Bir kuş satışı gerçekleştirildiğinde bilgilendirilirsiniz.</p>
+                      <p className="text-sm font-bold text-slate-700">Yuvalık ve Kafes Temizliği</p>
+                      <p className="text-[12px] text-slate-500 mt-0.5">Yavrular büyürken düzenli yapılması gereken alt temizliği günlerinde hatırlatır.</p>
                    </div>
-                   <ToggleSwitch active={notifSale} onChange={() => setNotifSale(!notifSale)} />
+                   <ToggleSwitch active={notifNestClean} onChange={() => setNotifNestClean(!notifNestClean)} />
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors">
+                <div className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
                    <div>
-                      <p className="text-sm font-bold text-slate-700">Düşük Stok Uyarısı</p>
-                      <p className="text-[12px] text-slate-500 mt-0.5">Yem ve ilaç stokları kritik seviyeye düştüğünde uyarı verir.</p>
+                      <p className="text-sm font-bold text-slate-700">Karantina Bitişi</p>
+                      <p className="text-[12px] text-slate-500 mt-0.5">Yeni alınan veya hasta olan kuşların karantina/tedavi süresi dolduğunda haber verir.</p>
                    </div>
-                   <ToggleSwitch active={notifStock} onChange={() => setNotifStock(!notifStock)} />
+                   <ToggleSwitch active={notifQuarantine} onChange={() => setNotifQuarantine(!notifQuarantine)} />
+                </div>
+
+                {/* Finans */}
+                <div className="pt-6 pb-1">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Finans & Sistem</h4>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                   <div>
+                      <p className="text-sm font-bold text-slate-700">Finansal Özet Bildirimi</p>
+                      <p className="text-[12px] text-slate-500 mt-0.5">Haftalık veya aylık gelir/gider durumunu özet bildirim olarak gönderir.</p>
+                   </div>
+                   <ToggleSwitch active={notifFinance} onChange={() => setNotifFinance(!notifFinance)} />
                 </div>
 
               </div>

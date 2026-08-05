@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { 
   ArrowLeft, Camera, Edit3, Info, Egg, ScrollText, 
   BookOpen, ShoppingCart, CalendarDays, Home, FileText,
-  Star
+  Star, Check
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
+import BirdModal from '../modals/BirdModal';
 
 const BirdDetail = ({ bird, onBack }) => {
-  const { birds } = useData();
+  const { birds, updateBird } = useData();
 
   // Find parents
   const father = birds.find(b => b.id === bird.fatherId);
@@ -37,6 +38,34 @@ const BirdDetail = ({ bird, onBack }) => {
     }
   };
 
+  // Edit Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const handleEditSave = async (updatedData) => {
+    updateBird(bird.id, updatedData);
+    setIsEditModalOpen(false);
+  };
+
+  // Photo Upload Logic
+  const fileInputRef = useRef(null);
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        updateBird(bird.id, { photo: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Notes Edit Logic
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [tempNotes, setTempNotes] = useState(bird.notes || '');
+  const handleSaveNotes = () => {
+    updateBird(bird.id, { notes: tempNotes });
+    setIsEditingNotes(false);
+  };
+
   return (
     <div className="max-w-[1400px] mx-auto pb-10">
       
@@ -64,15 +93,26 @@ const BirdDetail = ({ bird, onBack }) => {
         <div className="w-full xl:w-[320px] bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden shrink-0">
           
           <div className="relative aspect-square bg-slate-100">
-            {/* Kuş Resmi Placeholder */}
+            {/* Kuş Resmi Placeholder veya Gerçek Resim */}
             <img 
-              src={`https://ui-avatars.com/api/?name=${bird.bandNumber}&background=f1f5f9&color=94a3b8&size=512&font-size=0.15`}
+              src={bird.photo || `https://ui-avatars.com/api/?name=${bird.bandNumber}&background=f1f5f9&color=94a3b8&size=512&font-size=0.15`}
               alt={bird.bandNumber}
               className="w-full h-full object-cover"
             />
-            <button className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-slate-700 hover:bg-white shadow-sm transition-colors">
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-slate-700 hover:bg-white shadow-sm transition-colors z-10"
+              title="Fotoğraf Yükle"
+            >
               <Camera size={18} />
             </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handlePhotoUpload} 
+              accept="image/*" 
+              className="hidden" 
+            />
           </div>
 
           <div className="p-6">
@@ -114,10 +154,16 @@ const BirdDetail = ({ bird, onBack }) => {
             </div>
 
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-center gap-2 py-2.5 border border-blue-200 text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors">
+              <button 
+                onClick={() => setIsEditModalOpen(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 border border-blue-200 text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors"
+              >
                 <Edit3 size={18} /> Düzenle
               </button>
-              <button className="w-full flex items-center justify-center gap-2 py-2.5 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-colors">
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center justify-center gap-2 py-2.5 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-colors"
+              >
                 <Camera size={18} /> Fotoğrafı Değiştir
               </button>
             </div>
@@ -220,13 +266,44 @@ const BirdDetail = ({ bird, onBack }) => {
               </div>
 
               <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-4 text-slate-800">
-                  <Edit3 size={20} className="text-emerald-500" />
-                  <h3 className="text-lg font-bold">Notlar</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2 text-slate-800">
+                    <Edit3 size={20} className="text-emerald-500" />
+                    <h3 className="text-lg font-bold">Notlar</h3>
+                  </div>
+                  {!isEditingNotes ? (
+                    <button 
+                      onClick={() => {
+                        setTempNotes(bird.notes || '');
+                        setIsEditingNotes(true);
+                      }}
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      Düzenle
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={handleSaveNotes}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+                    >
+                      <Check size={14} /> Kaydet
+                    </button>
+                  )}
                 </div>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  {bird.notes || 'Bu kuş için henüz bir not eklenmemiş.'}
-                </p>
+                
+                {isEditingNotes ? (
+                  <textarea 
+                    value={tempNotes}
+                    onChange={(e) => setTempNotes(e.target.value)}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm text-slate-700 min-h-[120px] resize-y transition-all"
+                    placeholder="Kuş hakkında notlarınızı buraya yazabilirsiniz..."
+                    autoFocus
+                  />
+                ) : (
+                  <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+                    {bird.notes || 'Bu kuş için henüz bir not eklenmemiş.'}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -235,6 +312,14 @@ const BirdDetail = ({ bird, onBack }) => {
         </div>
 
       </div>
+
+      <BirdModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        onSave={handleEditSave}
+        birdsList={birds}
+        initialData={bird}
+      />
     </div>
   );
 };

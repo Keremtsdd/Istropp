@@ -1,14 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Save } from 'lucide-react';
 
-const NestModal = ({ isOpen, onClose, onSave }) => {
+const NestModal = ({ isOpen, onClose, onSave, initialData = null }) => {
   const [formData, setFormData] = useState({
-    nestCode: '',
-    status: 'Boş',
-    aviaryName: 'Ana Salma',
-    nextAction: '',
-    nextActionDate: ''
+    nestCode: ''
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({ nestCode: initialData.nestCode });
+    } else {
+      setFormData({ nestCode: '' });
+    }
+  }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -22,18 +27,20 @@ const NestModal = ({ isOpen, onClose, onSave }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData);
-    setFormData({ nestCode: '', status: 'Boş', aviaryName: 'Ana Salma', nextAction: '', nextActionDate: '' });
-    onClose();
+    const success = onSave(formData, initialData?.id);
+    if (success !== false) {
+      setFormData({ nestCode: '' });
+      onClose();
+    }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}></div>
 
       <div className="relative bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-          <h3 className="text-lg font-bold text-slate-800">Yeni Yuvalık Ekle</h3>
+          <h3 className="text-lg font-bold text-slate-800">{initialData ? 'Yuvalığı Düzenle' : 'Yeni Yuvalık Ekle'}</h3>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200/50 text-slate-500 transition-colors">
             <X size={20} />
           </button>
@@ -46,27 +53,7 @@ const NestModal = ({ isOpen, onClose, onSave }) => {
               <input 
                 required type="text" name="nestCode" value={formData.nestCode} onChange={handleChange}
                 placeholder="Örn: Y-01, Kafes-3"
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Durum *</label>
-              <select 
-                name="status" value={formData.status} onChange={handleChange}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
-              >
-                <option value="Boş">Boş</option>
-                <option value="Kuluçkada">Kuluçkada (Yumurtalı)</option>
-                <option value="Yavrulu">Yavrulu</option>
-                <option value="Dinlenmede">Dinlenmede</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Konum (Salma/Oda)</label>
-              <input 
-                type="text" name="aviaryName" value={formData.aviaryName} onChange={handleChange}
+                autoComplete="off"
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
               />
             </div>
@@ -82,7 +69,8 @@ const NestModal = ({ isOpen, onClose, onSave }) => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -1,16 +1,77 @@
-import { useState } from 'react';
-import { X, Save, AlertCircle } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { X, Save, AlertCircle, ChevronDown } from 'lucide-react';
 
-const BirdModal = ({ isOpen, onClose, onSave, birdsList }) => {
+const FormDropdown = ({ options, value, onChange, placeholder = "Seçiniz..." }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(opt => String(opt.value) === String(value));
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between cursor-pointer focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all"
+      >
+        <span className={selectedOption ? "text-slate-800" : "text-slate-400"}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </div>
+      
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1.5 w-full bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/50 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150 max-h-48 overflow-y-auto">
+          {options.map((opt) => (
+            <div 
+              key={opt.value}
+              className={`px-4 py-2 text-sm cursor-pointer transition-colors ${String(value) === String(opt.value) ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700 hover:bg-slate-50'}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const BirdModal = ({ isOpen, onClose, onSave, birdsList, initialData = null }) => {
   const [formData, setFormData] = useState({
     bandNumber: '',
-    gender: 0, // 0 = Erkek, 1 = Dişi, 2 = Unknown
-    mutation: '',
-    birthDate: '',
-    status: 1, // Default: Breeder
+    gender: 0,
     motherId: '',
     fatherId: ''
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        bandNumber: initialData.bandNumber || '',
+        gender: initialData.gender ?? 0,
+        motherId: initialData.motherId || '',
+        fatherId: initialData.fatherId || ''
+      });
+    } else {
+      setFormData({ bandNumber: '', gender: 0, motherId: '', fatherId: '' });
+    }
+  }, [initialData, isOpen]);
+
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -31,17 +92,17 @@ const BirdModal = ({ isOpen, onClose, onSave, birdsList }) => {
     const dataToSubmit = {
       ...formData,
       gender: parseInt(formData.gender),
-      status: parseInt(formData.status),
+      status: 1, // Default olarak Damızlık eklenecek arka planda
+      mutation: 'Bilinmiyor',
       motherId: formData.motherId ? parseInt(formData.motherId) : null,
       fatherId: formData.fatherId ? parseInt(formData.fatherId) : null,
-      birthDate: formData.birthDate ? new Date(formData.birthDate).toISOString() : null
     };
 
     try {
       await onSave(dataToSubmit);
       // Reset form
       setFormData({
-        bandNumber: '', gender: 0, mutation: '', birthDate: '', status: 1, motherId: '', fatherId: ''
+        bandNumber: '', gender: 0, motherId: '', fatherId: ''
       });
       onClose();
     } catch (error) {
@@ -51,20 +112,20 @@ const BirdModal = ({ isOpen, onClose, onSave, birdsList }) => {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" 
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity animate-in fade-in duration-300" 
         onClick={onClose}
       ></div>
 
       {/* Modal Content */}
-      <div className="relative bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-visible animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-300">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-          <h3 className="text-lg font-bold text-slate-800">Yeni Kuş Ekle</h3>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
+          <h3 className="text-lg font-bold text-slate-800">{initialData ? 'Kuşu Düzenle' : 'Yeni Kuş Ekle'}</h3>
           <button 
             onClick={onClose}
             className="p-2 rounded-full hover:bg-slate-200/50 text-slate-500 transition-colors"
@@ -74,7 +135,7 @@ const BirdModal = ({ isOpen, onClose, onSave, birdsList }) => {
         </div>
 
         {/* Body */}
-        <div className="p-6 overflow-y-auto max-h-[70vh]">
+        <div className="p-6">
           <form id="birdForm" onSubmit={handleSubmit} className="space-y-5">
             
             <div className="grid grid-cols-2 gap-4">
@@ -86,64 +147,23 @@ const BirdModal = ({ isOpen, onClose, onSave, birdsList }) => {
                   name="bandNumber"
                   value={formData.bandNumber}
                   onChange={handleChange}
-                  placeholder="Örn: TR-23-1234"
+                  placeholder="Örn: 2026-001"
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                 />
               </div>
 
               <div className="col-span-2 sm:col-span-1">
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Cinsiyet *</label>
-                <select 
-                  name="gender"
+                <FormDropdown 
                   value={formData.gender}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                >
-                  <option value={0}>Erkek</option>
-                  <option value={1}>Dişi</option>
-                  <option value={2}>Bilinmiyor</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Mutasyon / Renk</label>
-                <input 
-                  type="text" 
-                  name="mutation"
-                  value={formData.mutation}
-                  onChange={handleChange}
-                  placeholder="Örn: Lutino, Albino..."
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  onChange={(val) => handleChange({ target: { name: 'gender', value: val }})}
+                  options={[
+                    { value: 0, label: 'Erkek' },
+                    { value: 1, label: 'Dişi' },
+                    { value: 2, label: 'Bilinmiyor' }
+                  ]}
                 />
               </div>
-              
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Durum *</label>
-                <select 
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                >
-                  <option value={1}>Damızlık</option>
-                  <option value={2}>Yavru</option>
-                  <option value={3}>Dinlenmede</option>
-                  <option value={4}>Satılık</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Doğum Tarihi</label>
-              <input 
-                type="date" 
-                name="birthDate"
-                value={formData.birthDate}
-                onChange={handleChange}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-              />
             </div>
 
             <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl space-y-4 mt-2">
@@ -155,31 +175,33 @@ const BirdModal = ({ isOpen, onClose, onSave, birdsList }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-blue-900 mb-1.5">Baba Kuş</label>
-                  <select 
-                    name="fatherId"
+                  <FormDropdown 
                     value={formData.fatherId}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-sm"
-                  >
-                    <option value="">Seçiniz...</option>
-                    {birdsList?.filter(b => b.gender === 'Male' || b.gender === 'Erkek' || b.gender === '0').map(b => (
-                      <option key={b.id} value={b.id}>{b.bandNumber} ({b.mutation || 'Mutasyon Yok'})</option>
-                    ))}
-                  </select>
+                    onChange={(val) => handleChange({ target: { name: 'fatherId', value: val }})}
+                    placeholder="Seçiniz..."
+                    options={[
+                      { value: '', label: 'Seçiniz...' },
+                      ...(birdsList?.filter(b => b.gender === 'Male' || b.gender === 'Erkek' || b.gender === '0' || b.gender === 0).map(b => ({
+                        value: b.id,
+                        label: `${b.bandNumber} (${b.mutation || 'Mutasyon Yok'})`
+                      })) || [])
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-blue-900 mb-1.5">Anne Kuş</label>
-                  <select 
-                    name="motherId"
+                  <FormDropdown 
                     value={formData.motherId}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg focus:ring-2 focus:ring-pink-400 outline-none text-sm"
-                  >
-                    <option value="">Seçiniz...</option>
-                    {birdsList?.filter(b => b.gender === 'Female' || b.gender === 'Dişi' || b.gender === '1').map(b => (
-                      <option key={b.id} value={b.id}>{b.bandNumber} ({b.mutation || 'Mutasyon Yok'})</option>
-                    ))}
-                  </select>
+                    onChange={(val) => handleChange({ target: { name: 'motherId', value: val }})}
+                    placeholder="Seçiniz..."
+                    options={[
+                      { value: '', label: 'Seçiniz...' },
+                      ...(birdsList?.filter(b => b.gender === 'Female' || b.gender === 'Dişi' || b.gender === '1' || b.gender === 1).map(b => ({
+                        value: b.id,
+                        label: `${b.bandNumber} (${b.mutation || 'Mutasyon Yok'})`
+                      })) || [])
+                    ]}
+                  />
                 </div>
               </div>
             </div>
@@ -188,7 +210,7 @@ const BirdModal = ({ isOpen, onClose, onSave, birdsList }) => {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex justify-end gap-3">
           <button 
             type="button"
             onClick={onClose}
@@ -211,7 +233,8 @@ const BirdModal = ({ isOpen, onClose, onSave, birdsList }) => {
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

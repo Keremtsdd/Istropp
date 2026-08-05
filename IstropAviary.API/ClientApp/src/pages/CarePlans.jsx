@@ -66,7 +66,7 @@ const CarePlans = () => {
     <div className="space-y-6 max-w-[1400px] mx-auto pb-10">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden">
         <div>
           <h2 className="text-3xl font-bold text-slate-800 tracking-tight">14 Günlük Bakım Programı</h2>
           <p className="text-slate-500 mt-1">Döngüsel bakım ve takviye şablonunuzu yönetin.</p>
@@ -74,9 +74,6 @@ const CarePlans = () => {
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <button onClick={() => window.print()} className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors font-medium shadow-sm flex-1 sm:flex-none">
             <FileText size={18} /> PDF Yazdır
-          </button>
-          <button onClick={() => window.print()} className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors font-medium shadow-sm flex-1 sm:flex-none">
-            <Printer size={18} /> Yazdır
           </button>
           <button 
             onClick={openAddModal}
@@ -90,7 +87,7 @@ const CarePlans = () => {
       <div className="flex flex-col lg:flex-row gap-6 items-stretch">
         
         {/* Left Column - 14 Days List */}
-        <div className="w-full lg:w-auto bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col shrink-0">
+        <div className="w-full lg:w-auto bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col shrink-0 print:hidden">
           <div className="p-5 border-b border-slate-50 flex items-center justify-between">
             <h3 className="font-bold text-slate-800 text-lg">Program Döngüsü</h3>
             <ChevronRight size={20} className="text-slate-400" />
@@ -176,7 +173,7 @@ const CarePlans = () => {
         </div>
 
         {/* Right Column - Selected Day Details */}
-        <div className="flex-1 bg-white rounded-2xl border border-slate-100 shadow-sm p-6 sm:p-8 flex flex-col">
+        <div className="flex-1 bg-white rounded-2xl border border-slate-100 print:border-none shadow-sm print:shadow-none p-6 sm:p-8 print:p-0 flex flex-col print:block w-full">
           
           {/* Day Header */}
           <div className="flex justify-between items-start mb-8">
@@ -273,7 +270,7 @@ const CarePlans = () => {
                       </div>
                       
                       {/* Action buttons (Edit/Delete) */}
-                      <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-slate-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-slate-50 opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
                         <button 
                           onClick={() => openEditModal(sup)}
                           className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Düzenle"
@@ -294,7 +291,7 @@ const CarePlans = () => {
                 
                 <button 
                   onClick={openAddModal}
-                  className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500 font-semibold hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500 font-semibold hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 transition-all flex items-center justify-center gap-2 print:hidden"
                 >
                   <Plus size={20} /> Bu Güne Başka Bir Takviye Ekle
                 </button>
@@ -306,7 +303,7 @@ const CarePlans = () => {
       </div>
 
       {/* Footer Settings */}
-      <div className="flex flex-col sm:flex-row items-center justify-between text-slate-500 text-sm mt-4 px-2 gap-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between text-slate-500 text-sm mt-4 px-2 gap-4 print:hidden">
         <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-slate-100 shadow-sm">
           <Info size={16} className="text-blue-500" />
           <span>Bu program 14 günde bir başa saracak şekilde uygulanır. İstediğiniz gün sayısını ayarlardan değiştirebilirsiniz.</span>

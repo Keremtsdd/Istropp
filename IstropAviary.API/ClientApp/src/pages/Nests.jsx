@@ -9,12 +9,21 @@ import NestModal from '../components/modals/NestModal';
 import NestDetail from '../components/nests/NestDetail';
 
 const Nests = () => {
-  const { nests, setNests, clutches, eggs, birds } = useData();
+  const { nests, setNests, deleteNest, updateNest, clutches, eggs, birds } = useData();
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingNest, setEditingNest] = useState(null);
   const [selectedNest, setSelectedNest] = useState(null);
+  const [activeMenuId, setActiveMenuId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('Tümü');
+
+  // Menü dışında tıklayınca menüyü kapat
+  useEffect(() => {
+    const handleClickOutside = () => setActiveMenuId(null);
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, []);
 
   if (selectedNest) {
     return <NestDetail nest={selectedNest} onBack={() => setSelectedNest(null)} />;
@@ -53,10 +62,16 @@ const Nests = () => {
   });
 
   // Arama ve Filtreleme
+  const normalize = (str) => {
+    if (!str) return '';
+    return str.toString().toLowerCase().replace(/0/g, 'o').replace(/[\s-]/g, '');
+  };
+
   const filteredNests = dynamicNests.filter(nest => {
-    const matchesSearch = nest.nestCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          nest.maleBand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          nest.femaleBand.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchNormalized = normalize(searchTerm);
+    const matchesSearch = normalize(nest.nestCode).includes(searchNormalized) ||
+                          normalize(nest.maleBand).includes(searchNormalized) ||
+                          normalize(nest.femaleBand).includes(searchNormalized);
     const matchesStatus = filterStatus === 'Tümü' || nest.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -70,18 +85,33 @@ const Nests = () => {
     bos: dynamicNests.filter(n => n.status === 'Boş').length,
   };
 
-  const handleAddNest = (nestData) => {
-    const newNest = {
-      ...nestData,
-      id: Date.now(),
-      maleBand: '-',
-      femaleBand: '-',
-      eggs: 0,
-      chicks: 0,
-      progress: 0,
-      totalDays: 0
-    };
-    setNests(prev => [...prev, newNest]);
+  const handleSaveNest = (nestData, id) => {
+    const isDuplicate = nests.some(n => 
+      n.id !== id && 
+      n.nestCode.toLowerCase().replace(/[\s-]/g, '') === nestData.nestCode.toLowerCase().replace(/[\s-]/g, '')
+    );
+
+    if (isDuplicate) {
+      alert("Bu isimde veya koda sahip bir yuvalık zaten mevcut! Lütfen farklı bir kod girin.");
+      return false;
+    }
+
+    if (id) {
+      updateNest(id, nestData);
+    } else {
+      const newNest = {
+        ...nestData,
+        id: Date.now(),
+        maleBand: '-',
+        femaleBand: '-',
+        eggs: 0,
+        chicks: 0,
+        progress: 0,
+        totalDays: 0
+      };
+      setNests(prev => [...prev, newNest]);
+    }
+    return true;
   };
 
   const getStatusColor = (status) => {
@@ -116,7 +146,7 @@ const Nests = () => {
         </div>
 
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => { setEditingNest(null); setIsModalOpen(true); }}
           className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm shadow-blue-200 min-w-max"
         >
           <Plus size={18} /> Yeni Yuvalık
@@ -247,14 +277,47 @@ const Nests = () => {
                         <Calendar size={12} /> {nest.nextActionTime}
                       </div>
                     </div>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center relative">
                       <p className="text-sm font-medium text-slate-700 truncate pr-4">{nest.nextAction}</p>
                       <button 
-                        onClick={(e) => { e.stopPropagation(); /* modal etc */ }}
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setActiveMenuId(activeMenuId === nest.id ? null : nest.id); 
+                        }}
                         className="text-slate-300 hover:text-slate-500 transition-colors p-1"
                       >
                         <MoreHorizontal size={18} />
                       </button>
+
+                      {activeMenuId === nest.id && (
+                        <div className="absolute bottom-full right-0 mb-2 w-40 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-10 animate-in fade-in zoom-in-95 duration-100">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setSelectedNest(nest); setActiveMenuId(null); }}
+                            className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                          >
+                            İçeriği Düzenle
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setEditingNest(nest); setIsModalOpen(true); setActiveMenuId(null); }}
+                            className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                          >
+                            Adını Düzenle
+                          </button>
+                          <div className="h-px bg-slate-100 my-1"></div>
+                          <button 
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              if(window.confirm('Bu yuvalığı silmek istediğinize emin misiniz?')) {
+                                deleteNest(nest.id); 
+                              }
+                              setActiveMenuId(null); 
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-semibold"
+                          >
+                            Sil
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -280,7 +343,8 @@ const Nests = () => {
       <NestModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSave={handleAddNest}
+        onSave={handleSaveNest}
+        initialData={editingNest}
       />
     </div>
   );
