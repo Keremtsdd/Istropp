@@ -15,106 +15,85 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  const [birds, setBirds] = useState(() => loadData('aviary_birds', [
-    { id: 1, bandNumber: 'TR-23-001', gender: 0, mutation: 'Lutino', status: 1, notes: 'Örnek Kuş', aviaryName: 'Ana Salma' },
-    { id: 2, bandNumber: 'TR-23-002', gender: 1, mutation: 'Albino', status: 1, notes: 'Örnek Dişi', aviaryName: 'Ana Salma' }
-  ]));
-  
-  const [nests, setNests] = useState(() => loadData('aviary_nests', []));
-  const [sales, setSales] = useState(() => loadData('aviary_sales', []));
-  const [transactions, setTransactions] = useState(() => loadData('aviary_transactions', [
-    { id: 1, date: '31.07.2025', desc: '2026-045 Lutino (Erkek) Satış', type: 'Gelir', category: 'Kuş Satışı', amount: 1000 },
-    { id: 2, date: '31.07.2025', desc: 'Mama Alımı - Pro Yem', type: 'Gider', category: 'Yem', amount: 2250 },
-    { id: 3, date: '30.07.2025', desc: '2026-046 Mavi (Erkek) Satış', type: 'Gelir', category: 'Kuş Satışı', amount: 800 },
-    { id: 4, date: '30.07.2025', desc: 'Vitamin Takviyesi Alımı', type: 'Gider', category: 'İlaç / Vitamin', amount: 450 },
-    { id: 5, date: '29.07.2025', desc: 'Kafes Malzemesi Alımı', type: 'Gider', category: 'Malzeme', amount: 1150 },
-    { id: 6, date: '28.07.2025', desc: '2026-047 Yeşil (Dişi) Satış', type: 'Gelir', category: 'Kuş Satışı', amount: 700 },
-    { id: 7, date: '28.07.2025', desc: 'Elektrik Gideri', type: 'Gider', category: 'Fatura', amount: 320 },
-    { id: 8, date: '27.07.2025', desc: 'Kuluçka Kutusu Alımı', type: 'Gider', category: 'Malzeme', amount: 1300 }
-  ]));
-  const [carePlans, setCarePlans] = useState(() => loadData('aviary_careplans', []));
-  const [clutches, setClutches] = useState(() => loadData('aviary_clutches', []));
-  const [eggs, setEggs] = useState(() => loadData('aviary_eggs', []));
+  const [birds, setBirds] = useState([]);
+  const [nests, setNests] = useState([]);
+  const [sales, setSales] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [carePlans, setCarePlans] = useState([]);
+  const [clutches, setClutches] = useState([]);
+  const [eggs, setEggs] = useState([]);
 
-  // Save to localStorage whenever data changes
-  useEffect(() => { localStorage.setItem('aviary_birds', JSON.stringify(birds)); }, [birds]);
-  useEffect(() => { localStorage.setItem('aviary_nests', JSON.stringify(nests)); }, [nests]);
-  useEffect(() => { localStorage.setItem('aviary_sales', JSON.stringify(sales)); }, [sales]);
-  useEffect(() => { localStorage.setItem('aviary_transactions', JSON.stringify(transactions)); }, [transactions]);
-  useEffect(() => { localStorage.setItem('aviary_careplans', JSON.stringify(carePlans)); }, [carePlans]);
-  useEffect(() => { localStorage.setItem('aviary_clutches', JSON.stringify(clutches)); }, [clutches]);
-  useEffect(() => { localStorage.setItem('aviary_eggs', JSON.stringify(eggs)); }, [eggs]);
+  const [apiClient, setApiClient] = useState(null);
 
-  // -----------------------------------------------------
-  // EVENT-DRIVEN AUTOMATION FUNCTIONS (SIMULATION)
-  // -----------------------------------------------------
+  useEffect(() => {
+    import('../api/axiosClient').then(module => {
+      const client = module.default;
+      setApiClient(() => client);
+
+      // Fetch initial data from API
+      const fetchData = async () => {
+        try {
+          const [birdsRes, nestsRes, clutchesRes] = await Promise.all([
+            client.get('/Birds'),
+            client.get('/Nests'),
+            client.get('/Clutches').catch(() => ({ data: [] }))
+          ]);
+          setBirds(birdsRes.data);
+          setNests(nestsRes.data);
+          setClutches(clutchesRes.data);
+          
+          try {
+             const eggsRes = await client.get('/Breeding/eggs');
+             setEggs(eggsRes.data);
+          } catch(e) {}
+        } catch (error) {
+          console.error("API Fetch Error:", error);
+        }
+      };
+
+      fetchData();
+    });
+  }, []);
+
+
 
   // 1. Çiftleştirme Otomasyonu
-  const pairBirds = (maleId, femaleId, nestId) => {
-    const clutchId = Date.now();
-    const newClutch = {
-      id: clutchId,
-      maleId,
-      femaleId,
-      nestId,
-      startDate: new Date().toISOString().split('T')[0],
-      status: 'Aktif'
-    };
-    
-    // Kuşların durumunu "Damızlık (1)" yap ve yuvalığa ata
-    const nest = nests.find(n => n.id === nestId) || { nestCode: 'Bilinmiyor' };
-    setBirds(prev => prev.map(b => 
-      b.id === maleId || b.id === femaleId 
-        ? { ...b, status: 1, aviaryName: nest.nestCode } 
-        : b
-    ));
-    
-    // Kuluçka aç
-    setClutches(prev => [...prev, newClutch]);
+  const pairBirds = async (maleId, femaleId, nestId) => {
+    if (!apiClient) return;
+    try {
+      await apiClient.post('/Breeding/pair', { maleId, femaleId, nestId });
+      // To show immediate feedback without full refresh, we could just reload page or fetch data.
+      // For now, let's just trigger a reload to fetch new data (if fetching was implemented).
+      // Since fetching isn't fully implemented in Context yet, we will just alert for now.
+      alert('Kuşlar başarıyla eşleştirildi (Sunucu onayladı).');
+    } catch (error) {
+      console.error("Pairing error:", error);
+      alert('Eşleştirme sırasında bir hata oluştu.');
+    }
   };
 
   // 2. Yumurta Oluşumu
-  const registerEgg = (clutchId, layDate) => {
-    // 21 gün kuluçka süresi (varsayılan)
-    const hatchDate = new Date(layDate);
-    hatchDate.setDate(hatchDate.getDate() + 21);
-    
-    const newEgg = {
-      id: Date.now(),
-      clutchId,
-      layDate,
-      estimatedHatchDate: hatchDate.toISOString().split('T')[0],
-      status: 'Dolu'
-    };
-    
-    setEggs(prev => [...prev, newEgg]);
+  const registerEgg = async (pairId, layDate) => {
+    if (!apiClient) return;
+    try {
+      await apiClient.post('/Breeding/egg', { pairId, laidDate: layDate });
+      alert('Yumurta başarıyla kaydedildi.');
+    } catch (error) {
+      console.error("Egg error:", error);
+      alert('Yumurta kaydedilirken bir hata oluştu.');
+    }
   };
 
   // 3. Yumurta Çıkışı (Yavru Oluşumu)
-  const registerHatch = (eggId, hatchDate) => {
-    const egg = eggs.find(e => e.id === eggId);
-    if (!egg) return;
-    
-    const clutch = clutches.find(c => c.id === egg.clutchId);
-    if (!clutch) return;
-
-    // Yumurta statüsünü güncelle
-    setEggs(prev => prev.map(e => e.id === eggId ? { ...e, status: 'Çıktı', actualHatchDate: hatchDate } : e));
-    
-    // Yavru kayıt oluştur (Bilezik no şimdilik otomatik generik verilir)
-    const newChickId = Date.now();
-    const newBird = {
-      id: newChickId,
-      bandNumber: `YAVRU-${newChickId.toString().slice(-4)}`,
-      gender: null, // Bilinmiyor
-      mutation: 'Bilinmiyor',
-      status: 2, // Yavru
-      birthDate: hatchDate,
-      motherId: clutch.femaleId,
-      fatherId: clutch.maleId,
-      aviaryName: 'Anne Altı'
-    };
-    setBirds(prev => [...prev, newBird]);
+  const registerHatch = async (eggId, hatchDate) => {
+    if (!apiClient) return;
+    try {
+      await apiClient.post('/Breeding/hatch', { eggId, hatchDate });
+      alert('Yavru çıkışı kaydedildi.');
+    } catch (error) {
+      console.error("Hatch error:", error);
+      alert('Yavru çıkışı kaydedilirken hata oluştu.');
+    }
   };
 
   // 4. Satış İşlemi
@@ -158,17 +137,29 @@ export const DataProvider = ({ children }) => {
   };
 
   // 5. Basit Kuş Ekleme (Dışarıdan Alım vb)
-  const addBird = (birdData) => {
-    const newBird = {
-      ...birdData,
-      id: Date.now(),
-      status: birdData.status,
-      gender: birdData.gender
-    };
-    setBirds(prev => [...prev, newBird]);
+  const addBird = async (birdData) => {
+    if (!apiClient) return;
+    try {
+      const payload = {
+        bandNumber: birdData.bandNumber,
+        gender: parseInt(birdData.gender) || 0,
+        mutation: birdData.mutation,
+        birthDate: birdData.birthDate ? new Date(birdData.birthDate).toISOString() : null,
+        status: parseInt(birdData.status) || 1,
+        // photo/notes are not in BirdCreateDto yet but we'll pass what we can
+      };
+      const res = await apiClient.post('/Birds', payload);
+      setBirds(prev => [...prev, res.data]);
+      alert('Kuş başarıyla eklendi!');
+    } catch (error) {
+      console.error("Add bird error:", error);
+      alert('Kuş eklenirken hata oluştu.');
+    }
   };
 
-  const updateBird = (id, updatedData) => {
+  const updateBird = async (id, updatedData) => {
+    // Backend'de henüz PUT /Birds/{id} yok, şimdilik sadece state'i güncelliyoruz
+    // İleride backend'e eklendiğinde buraya apiClient.put(...) eklenecek
     setBirds(prev => prev.map(b => b.id === id ? { ...b, ...updatedData } : b));
   };
 

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Building, Fingerprint, Calendar as CalendarIcon, 
   Printer, Bell, Image as ImageIcon, Save, Search,
-  ToggleLeft, ToggleRight
+  ToggleLeft, ToggleRight, Clock
 } from 'lucide-react';
+import api from '../api/axiosClient';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('genel');
@@ -19,9 +20,54 @@ const Settings = () => {
   const [notifBreedingPrep, setNotifBreedingPrep] = useState(false);
   const [notifFinance, setNotifFinance] = useState(false);
 
+  // Otomasyon Süreleri
+  const [automationSettings, setAutomationSettings] = useState({
+    HatchDurationDays: 21,
+    CandlingDays: 7,
+    BandingDays: 10,
+    WeaningDays: 35
+  });
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await api.get('/settings');
+      if (response.data) {
+        setAutomationSettings({
+          HatchDurationDays: parseInt(response.data.HatchDurationDays || 21),
+          CandlingDays: parseInt(response.data.CandlingDays || 7),
+          BandingDays: parseInt(response.data.BandingDays || 10),
+          WeaningDays: parseInt(response.data.WeaningDays || 35)
+        });
+      }
+    } catch (error) {
+      console.error('Ayarlar yüklenemedi:', error);
+    }
+  };
+
+  const saveAutomationSettings = async () => {
+    try {
+      const payload = {
+        HatchDurationDays: automationSettings.HatchDurationDays.toString(),
+        CandlingDays: automationSettings.CandlingDays.toString(),
+        BandingDays: automationSettings.BandingDays.toString(),
+        WeaningDays: automationSettings.WeaningDays.toString()
+      };
+      await api.post('/settings', payload);
+      alert('Otomasyon süreleri kaydedildi!');
+    } catch (error) {
+      console.error('Ayarlar kaydedilemedi:', error);
+      alert('Kaydetme hatası!');
+    }
+  };
+
   const tabs = [
     { id: 'genel', icon: <Building size={18} />, label: 'Genel Bilgiler' },
     { id: 'bilezikler', icon: <Fingerprint size={18} />, label: 'Bilezikler' },
+    { id: 'sureler', icon: <Clock size={18} />, label: 'Otomasyon Süreleri' },
     { id: 'bildirimler', icon: <Bell size={18} />, label: 'Bildirimler' }
   ];
 
@@ -152,6 +198,71 @@ const Settings = () => {
                 </div>
                 <div className="flex justify-end pt-2">
                   <button className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm">
+                    <Save size={18} /> Kaydet
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* OTOMASYON SÜRELERİ */}
+          {activeTab === 'sureler' && (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+              <h3 className="text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-slate-100">Kuluçka ve Gelişim Süreleri (Gün)</h3>
+              <p className="text-sm text-slate-500 mb-6">Bu süreler, sistem tarafından otomatik hatırlatmalar ve görevler oluşturmak için kullanılır.</p>
+              
+              <div className="max-w-2xl space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kuluçka Süresi</label>
+                    <input 
+                      type="number" 
+                      value={automationSettings.HatchDurationDays}
+                      onChange={e => setAutomationSettings({...automationSettings, HatchDurationDays: e.target.value})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors font-medium"
+                    />
+                    <p className="text-xs text-slate-400 mt-1">Yumurtlama gününden çıkışa kadar geçen süre (Genelde 21-23 gün).</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Döl Kontrol Süresi</label>
+                    <input 
+                      type="number" 
+                      value={automationSettings.CandlingDays}
+                      onChange={e => setAutomationSettings({...automationSettings, CandlingDays: e.target.value})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors font-medium"
+                    />
+                    <p className="text-xs text-slate-400 mt-1">Yumurtlama gününden sonra döl kontrolünün yapılacağı gün (Genelde 7. gün).</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Bilezikleme Süresi</label>
+                    <input 
+                      type="number" 
+                      value={automationSettings.BandingDays}
+                      onChange={e => setAutomationSettings({...automationSettings, BandingDays: e.target.value})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors font-medium"
+                    />
+                    <p className="text-xs text-slate-400 mt-1">Yavru çıkışından bilezik takılmasına kadar geçen süre (Genelde 7-10 gün).</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Yeme Düşme (Ayırma) Süresi</label>
+                    <input 
+                      type="number" 
+                      value={automationSettings.WeaningDays}
+                      onChange={e => setAutomationSettings({...automationSettings, WeaningDays: e.target.value})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors font-medium"
+                    />
+                    <p className="text-xs text-slate-400 mt-1">Yavru çıkışından yeme düşmesine kadar geçen süre (Genelde 35-40 gün).</p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end pt-2">
+                  <button 
+                    onClick={saveAutomationSettings}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm"
+                  >
                     <Save size={18} /> Kaydet
                   </button>
                 </div>

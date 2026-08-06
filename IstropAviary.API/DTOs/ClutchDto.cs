@@ -9,6 +9,10 @@ public class ClutchDto
     public int NestId { get; set; }
     public string? NestCode { get; set; }
 
+    public int IncubatingEggCount { get; set; }
+    public int HatchedCount { get; set; }
+    public int LostCount { get; set; }
+
     public DateTime? LaidDate { get; set; }
     public DateTime? HatchDate { get; set; }
     public DateTime? BandingDate { get; set; }
@@ -21,5 +25,5 @@ public class ClutchCreateDto
     public DateTime? LaidDate { get; set; }
     public DateTime? HatchDate { get; set; }
     public DateTime? BandingDate { get; set; }
-    public EggStatus Status { get; set; } = EggStatus.Egg;
+    public EggStatus Status { get; set; } = EggStatus.Incubating;
 }

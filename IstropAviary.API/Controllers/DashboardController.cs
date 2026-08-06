@@ -31,7 +31,7 @@ public class DashboardController : ControllerBase
         var totalBirds = await _context.Birds.CountAsync(b => b.Status != BirdStatus.Deceased && b.Status != BirdStatus.Sold);
         var activeNests = await _context.Nests.CountAsync(n => n.Status == NestStatus.Active);
         
-        var firstDayOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+        var firstDayOfMonth = DateTime.SpecifyKind(new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1), DateTimeKind.Utc);
         
         var monthlySales = await _context.Sales
             .Where(s => s.Date >= firstDayOfMonth)
@@ -56,7 +56,7 @@ public class DashboardController : ControllerBase
 
         var upcomingHatches = await _context.Clutches
             .Include(c => c.Nest)
-            .Where(c => c.Status == EggStatus.Egg && c.HatchDate.HasValue && c.HatchDate.Value.Date >= today && c.HatchDate.Value.Date <= today.AddDays(2))
+            .Where(c => c.Status == EggStatus.Incubating && c.HatchDate.HasValue && c.HatchDate.Value.Date >= today && c.HatchDate.Value.Date <= today.AddDays(2))
             .ToListAsync();
 
         var todayCarePlans = await _context.CarePlans

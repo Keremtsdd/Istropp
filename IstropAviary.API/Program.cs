@@ -1,4 +1,5 @@
 using IstropAviary.API.Data;
+using IstropAviary.API.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
@@ -16,8 +17,15 @@ builder.Services.AddControllers()
 // builder.Services.AddEndpointsApiExplorer();
 // builder.Services.AddSwaggerGen();
 
+
+
 // AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+// Automation Services
+builder.Services.AddScoped<ISystemSettingService, SystemSettingService>();
+builder.Services.AddScoped<IBreedingAutomationService, BreedingAutomationService>();
+// builder.Services.AddScoped<ISalesAutomationService, SalesAutomationService>();
 
 // JWT Authentication
 var key = System.Text.Encoding.ASCII.GetBytes("SuperSecretKey123!_NeedsToBeLongEnough");
@@ -49,7 +57,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowVite",
         builder => builder
-            .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+            .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174")
             .AllowAnyMethod()
             .AllowAnyHeader());
 });

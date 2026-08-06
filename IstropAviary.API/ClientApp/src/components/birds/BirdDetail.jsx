@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import BirdModal from '../modals/BirdModal';
+import PedigreeTree from './PedigreeTree';
+import { GitMerge } from 'lucide-react';
 
 const BirdDetail = ({ bird, onBack }) => {
   const { birds, updateBird } = useData();
@@ -311,6 +313,17 @@ const BirdDetail = ({ bird, onBack }) => {
 
         </div>
 
+      </div>
+
+      {/* Pedigree (Soy Ağacı) Bölümü */}
+      <div className="mt-6 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2 mb-2 text-slate-800">
+          <GitMerge size={20} className="text-purple-500" />
+          <h3 className="text-lg font-bold">Soy Ağacı (Pedigree)</h3>
+        </div>
+        <p className="text-sm text-slate-500 mb-6">Kuşun 3 nesillik (Anne-Baba ve Büyükanne-Büyükbaba) genetik geçmişi.</p>
+        
+        <PedigreeTree rootBird={bird} />
       </div>
 
       <BirdModal 

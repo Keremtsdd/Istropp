@@ -8,8 +8,12 @@ public class Clutch
     public int NestId { get; set; }
     public Nest? Nest { get; set; }
 
+    public int TotalEggs { get; set; }
+    public int IncubatingEggs { get; set; }
+    public int HatchedEggs { get; set; }
+
     public DateTime? LaidDate { get; set; }
     public DateTime? HatchDate { get; set; }
     public DateTime? BandingDate { get; set; }
-    public EggStatus Status { get; set; } = EggStatus.Egg;
+    public EggStatus Status { get; set; } = EggStatus.Incubating;
 }

@@ -14,10 +14,10 @@ const Topnav = () => {
         
         <div className="flex items-center gap-3 cursor-pointer group">
           <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 font-bold uppercase text-sm border border-brand-200">
-            {user?.username?.substring(0, 2) || 'AD'}
+            EM
           </div>
           <div className="flex items-center gap-1 text-sm font-semibold text-slate-700 capitalize group-hover:text-brand-600 transition-colors">
-            {user?.username || 'Yetkili'}
+            Emirhan Manavoğlu
             <ChevronDown size={14} className="text-slate-400" />
           </div>
         </div>
