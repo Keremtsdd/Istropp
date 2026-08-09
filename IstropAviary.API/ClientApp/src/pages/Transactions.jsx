@@ -28,7 +28,10 @@ const Transactions = () => {
     let result = transactions;
     
     if (filterType !== 'Tümü') {
-      result = result.filter(t => t.type === filterType);
+      result = result.filter(t => {
+        const typeStr = (t.type === 'Income' || t.type === 'Gelir') ? 'Gelir' : 'Gider';
+        return typeStr === filterType;
+      });
     }
 
     if (dateFilter !== 'Tümü') {
@@ -48,17 +51,47 @@ const Transactions = () => {
   }, [filterType, dateFilter, transactions]);
 
   // Hesaplamalar
-  const totalIncome = transactions.filter(t => t.type === 'Gelir').reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-  const totalExpense = transactions.filter(t => t.type === 'Gider').reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+  const totalIncome = transactions.filter(t => t.type === 'Income' || t.type === 'Gelir').reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+  const totalExpense = transactions.filter(t => t.type === 'Expense' || t.type === 'Gider').reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
   const netIncome = totalIncome - totalExpense;
+
+  // Kategori Hesaplamaları (Bu Ay)
+  const currentMonthExpenses = transactions.filter(t => {
+    const isExpense = t.type === 'Expense' || t.type === 'Gider';
+    const txDate = parseDate(t.date);
+    const now = new Date();
+    return isExpense && txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
+  });
+
+  const baseCategories = [
+    { name: 'Yem', color: '#3b82f6', bgClass: 'bg-blue-500' },
+    { name: 'İlaç / Vitamin', color: '#22c55e', bgClass: 'bg-green-500' },
+    { name: 'Malzeme', color: '#eab308', bgClass: 'bg-yellow-500' },
+    { name: 'Fatura', color: '#a855f7', bgClass: 'bg-purple-500' },
+    { name: 'Diğer', color: '#94a3b8', bgClass: 'bg-slate-400' }
+  ];
+
+  const totalMonthlyExpense = currentMonthExpenses.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
+  const categoryTotals = baseCategories.map(cat => {
+    const total = currentMonthExpenses
+      .filter(t => (t.category || 'Diğer') === cat.name)
+      .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+    const percent = totalMonthlyExpense > 0 ? (total / totalMonthlyExpense) * 100 : 0;
+    return { ...cat, total, percent };
+  }).filter(c => c.total > 0).sort((a, b) => b.total - a.total);
 
   const formatMoney = (val) => new Intl.NumberFormat('tr-TR').format(val || 0) + ' ₺';
 
   const handleSaveTransaction = (data) => {
+    const payload = {
+      ...data,
+      type: data.type === 'Gelir' ? 0 : 1
+    };
     if (editingTransaction) {
-      updateTransaction(editingTransaction.id, data);
+      updateTransaction(editingTransaction.id, payload);
     } else {
-      addTransaction(data);
+      addTransaction(payload);
     }
   };
 
@@ -176,19 +209,21 @@ const Transactions = () => {
                 </tr>
               </thead>
               <tbody className="text-sm text-slate-700 divide-y divide-slate-50">
-                {filteredTransactions.map((tx) => (
+                {filteredTransactions.map((tx) => {
+                  const typeStr = (tx.type === 'Income' || tx.type === 'Gelir') ? 'Gelir' : 'Gider';
+                  return (
                   <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-4 pl-6 text-slate-500">{tx.date}</td>
-                    <td className="p-4 font-medium">{tx.desc}</td>
+                    <td className="p-4 pl-6 text-slate-500">{tx.date ? tx.date.split('T')[0] : ''}</td>
+                    <td className="p-4 font-medium">{tx.description}</td>
                     <td className="p-4 text-center">
                       <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold ${
-                        tx.type === 'Gelir' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        typeStr === 'Gelir' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                       }`}>
-                        {tx.type}
+                        {typeStr}
                       </span>
                     </td>
                     <td className={`p-4 text-right pr-10 font-bold ${
-                      tx.type === 'Gelir' ? 'text-green-600' : 'text-red-500'
+                      typeStr === 'Gelir' ? 'text-green-600' : 'text-red-500'
                     }`}>
                       {formatMoney(tx.amount)}
                     </td>
@@ -211,7 +246,8 @@ const Transactions = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -235,44 +271,40 @@ const Transactions = () => {
           <div className="relative w-48 h-48 mx-auto mb-8">
             <svg viewBox="0 0 42 42" className="w-full h-full drop-shadow-md">
               <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#f1f5f9" strokeWidth="6"></circle>
-              {/* Yem - Blue (37.9%) */}
-              <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#3b82f6" strokeWidth="6" strokeDasharray="37.9 62.1" strokeDashoffset="25"></circle>
-              {/* İlaç - Green (19.4%) */}
-              <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#22c55e" strokeWidth="6" strokeDasharray="19.4 80.6" strokeDashoffset="-12.9"></circle>
-              {/* Malzeme - Yellow (23.2%) */}
-              <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#eab308" strokeWidth="6" strokeDasharray="23.2 76.8" strokeDashoffset="-32.3"></circle>
-              {/* Fatura - Purple (12.9%) */}
-              <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#a855f7" strokeWidth="6" strokeDasharray="12.9 87.1" strokeDashoffset="-55.5"></circle>
-              {/* Diğer - Gray (6.6%) */}
-              <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#94a3b8" strokeWidth="6" strokeDasharray="6.6 93.4" strokeDashoffset="-68.4"></circle>
+              {(() => {
+                let currentOffset = 25;
+                return categoryTotals.map((cat, i) => {
+                  if (cat.percent === 0) return null;
+                  const dasharray = `${cat.percent} ${100 - cat.percent}`;
+                  const offset = currentOffset;
+                  currentOffset -= cat.percent;
+                  return (
+                    <circle key={i} cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke={cat.color} strokeWidth="6" strokeDasharray={dasharray} strokeDashoffset={offset}></circle>
+                  );
+                });
+              })()}
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-[10px] font-semibold text-slate-400">Toplam Gider</span>
-              <span className="text-lg font-bold text-slate-800">{formatMoney(totalExpense)}</span>
+              <span className="text-lg font-bold text-slate-800">{formatMoney(totalMonthlyExpense)}</span>
             </div>
           </div>
 
           <div className="space-y-4 mb-8">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div><span className="font-medium text-slate-700">Yem</span></div>
-              <div className="flex items-center gap-3"><span className="font-semibold text-slate-800">4.250 ₺</span><span className="text-slate-400 text-xs w-8 text-right">37.9%</span></div>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-green-500"></div><span className="font-medium text-slate-700">İlaç / Vitamin</span></div>
-              <div className="flex items-center gap-3"><span className="font-semibold text-slate-800">2.180 ₺</span><span className="text-slate-400 text-xs w-8 text-right">19.4%</span></div>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div><span className="font-medium text-slate-700">Malzeme</span></div>
-              <div className="flex items-center gap-3"><span className="font-semibold text-slate-800">2.600 ₺</span><span className="text-slate-400 text-xs w-8 text-right">23.2%</span></div>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div><span className="font-medium text-slate-700">Fatura</span></div>
-              <div className="flex items-center gap-3"><span className="font-semibold text-slate-800">1.450 ₺</span><span className="text-slate-400 text-xs w-8 text-right">12.9%</span></div>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-slate-400"></div><span className="font-medium text-slate-700">Diğer</span></div>
-              <div className="flex items-center gap-3"><span className="font-semibold text-slate-800">750 ₺</span><span className="text-slate-400 text-xs w-8 text-right">6.6%</span></div>
-            </div>
+            {categoryTotals.length === 0 ? (
+              <div className="text-sm text-center text-slate-500">Bu ay gider bulunmuyor.</div>
+            ) : categoryTotals.map((cat, i) => (
+              <div key={i} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full ${cat.bgClass}`}></div>
+                  <span className="font-medium text-slate-700">{cat.name}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold text-slate-800">{formatMoney(cat.total)}</span>
+                  <span className="text-slate-400 text-xs w-8 text-right">{cat.percent.toFixed(1)}%</span>
+                </div>
+              </div>
+            ))}
           </div>
 
 
@@ -284,7 +316,7 @@ const Transactions = () => {
       {/* Footer Info */}
       <div className="flex items-center gap-2 bg-blue-50/50 text-blue-700 px-4 py-3 rounded-xl border border-blue-100 text-sm font-medium print:hidden">
         <Info size={18} className="text-blue-500" />
-        <span>Bu zamana kadar {transactions.filter(t => t.type === 'Gelir').length} gelir, {transactions.filter(t => t.type === 'Gider').length} gider işlemi kaydedildi.</span>
+        <span>Bu zamana kadar {transactions.filter(t => t.type === 'Income' || t.type === 'Gelir').length} gelir, {transactions.filter(t => t.type === 'Expense' || t.type === 'Gider').length} gider işlemi kaydedildi.</span>
       </div>
 
       {/* Modals */}

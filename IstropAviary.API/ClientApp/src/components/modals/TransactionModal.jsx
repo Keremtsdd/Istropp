@@ -6,7 +6,7 @@ import FormDropdown from '../ui/FormDropdown';
 const TransactionModal = ({ isOpen, onClose, onSave, initialData = null }) => {
   const [formData, setFormData] = useState({
     date: '',
-    desc: '',
+    description: '',
     type: 'Gelir',
     category: '',
     amount: ''
@@ -15,14 +15,14 @@ const TransactionModal = ({ isOpen, onClose, onSave, initialData = null }) => {
   useEffect(() => {
     if (initialData) {
       setFormData({
-        date: initialData.date || '',
-        desc: initialData.desc || '',
-        type: initialData.type || 'Gelir',
+        date: initialData.date ? initialData.date.split('T')[0] : '',
+        description: initialData.description || '',
+        type: (initialData.type === 'Income' || initialData.type === 'Gelir') ? 'Gelir' : 'Gider',
         category: initialData.category || '',
         amount: initialData.amount || ''
       });
     } else {
-      setFormData({ date: new Date().toISOString().split('T')[0], desc: '', type: 'Gelir', category: '', amount: '' });
+      setFormData({ date: new Date().toISOString().split('T')[0], description: '', type: 'Gelir', category: '', amount: '' });
     }
   }, [initialData, isOpen]);
 
@@ -30,7 +30,13 @@ const TransactionModal = ({ isOpen, onClose, onSave, initialData = null }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      const next = { ...prev, [name]: value };
+      if (name === 'type') {
+        next.category = value === 'Gelir' ? 'Satış' : 'Yem';
+      }
+      return next;
+    });
   };
 
   const handleSubmit = (e) => {
@@ -74,12 +80,35 @@ const TransactionModal = ({ isOpen, onClose, onSave, initialData = null }) => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Açıklama *</label>
-              <input 
-                required type="text" name="desc" value={formData.desc} onChange={handleChange} placeholder="Örn: Yem Alımı"
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kategori</label>
+                <FormDropdown 
+                  value={formData.category}
+                  onChange={(val) => handleChange({ target: { name: 'category', value: val }})}
+                  options={
+                    formData.type === 'Gelir'
+                      ? [
+                          { value: 'Satış', label: 'Satış' },
+                          { value: 'Diğer Gelir', label: 'Diğer Gelir' }
+                        ]
+                      : [
+                          { value: 'Yem', label: 'Yem' },
+                          { value: 'İlaç / Vitamin', label: 'İlaç / Vitamin' },
+                          { value: 'Malzeme', label: 'Malzeme' },
+                          { value: 'Fatura', label: 'Fatura' },
+                          { value: 'Diğer', label: 'Diğer' }
+                        ]
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Açıklama *</label>
+                <input 
+                  required type="text" name="description" value={formData.description} onChange={handleChange} placeholder="Örn: Yem Alımı"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-[42px]"
+                />
+              </div>
             </div>
 
             <div>

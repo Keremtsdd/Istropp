@@ -129,17 +129,18 @@ const SaleModal = ({ isOpen, onClose, onSave, birds, initialData = null }) => {
   useEffect(() => {
     if (initialData) {
       setFormData({
-        birdIds: initialData.birdIds || (initialData.birdId ? [initialData.birdId] : []),
-        buyerName: initialData.customer || '',
-        buyerPhone: initialData.buyerPhone || '',
-        buyerAddress: initialData.buyerAddress || '',
-        price: initialData.price || '',
-        date: initialData.date || '',
-        status: initialData.status || 'Tamamlandı',
-        notes: initialData.notes || ''
+        birdIds: initialData.saleDetails ? initialData.saleDetails.map(d => d.birdId) : [],
+        buyerName: initialData.customerName || '',
+        buyerPhone: initialData.customerPhone || '',
+        buyerAddress: initialData.customerCity || '',
+        price: initialData.totalAmount || '',
+        date: initialData.date ? initialData.date.split('T')[0] : '',
+        status: initialData.paymentType || 'Tamamlandı',
+        notes: initialData.notes || '',
+        saleNumber: initialData.saleNumber || ''
       });
     } else {
-      setFormData({ birdIds: [], buyerName: '', buyerPhone: '', buyerAddress: '', price: '', date: '', status: 'Beklemede', notes: '' });
+      setFormData({ birdIds: [], buyerName: '', buyerPhone: '', buyerAddress: '', price: '', date: '', status: 'Tamamlandı', notes: '', saleNumber: '' });
     }
   }, [initialData, isOpen]);
 
@@ -184,7 +185,9 @@ const SaleModal = ({ isOpen, onClose, onSave, birds, initialData = null }) => {
                 value={formData.birdIds}
                 onChange={(val) => handleChange({ target: { name: 'birdIds', value: val }})}
                 placeholder="Seçiniz..."
-                options={birds?.map(b => ({ value: b.id, label: `${b.bandNumber} - ${b.mutation || 'Mutasyon Yok'}` })) || []}
+                options={birds
+                  ?.filter(b => b.status !== 'Sold' || formData.birdIds.includes(b.id))
+                  .map(b => ({ value: b.id, label: `${b.bandNumber} - ${b.mutation || 'Mutasyon Yok'}` })) || []}
               />
             </div>
             

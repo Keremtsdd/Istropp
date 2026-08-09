@@ -15,36 +15,30 @@ const Sales = () => {
 
   const filteredSales = sales.filter(s => {
     const q = searchQuery.toLowerCase();
-    return s.customer?.toLowerCase().includes(q);
+    return s.customerName?.toLowerCase().includes(q);
   });
 
-  // Sahte mock data yerine Context'ten gelen verileri al. Eger secili yoksa ilkini sec.
+  // Eger secili yoksa ilkini sec.
   const activeSale = filteredSales.find(s => s.id === selectedSaleId) || filteredSales[0];
   
   if (!selectedSaleId && filteredSales.length > 0) {
     setSelectedSaleId(filteredSales[0].id);
   }
 
-  const activeIds = activeSale ? (activeSale.birdIds || [activeSale.birdId].filter(Boolean)) : [];
-  const mockBirds = activeSale ? birds.filter(b => activeIds.includes(b.id)).map(b => ({
-    id: b.bandNumber,
-    gender: b.gender === 0 || b.gender === '0' || b.gender === 'Erkek' ? 'male' : 'female',
-    mutation: b.mutation,
-    age: '-',
-    price: '-'
-  })) : [];
+  const activeSaleDetails = activeSale?.saleDetails || [];
 
   const handleAddSale = (saleData) => {
     if (editingSale) {
       updateSale(editingSale.id, {
         birdIds: saleData.birdIds,
-        customer: saleData.buyerName,
-        buyerPhone: saleData.buyerPhone,
-        buyerAddress: saleData.buyerAddress,
+        customerName: saleData.buyerName,
+        customerPhone: saleData.buyerPhone,
+        customerCity: saleData.buyerAddress,
         price: saleData.price,
         date: saleData.date,
-        status: saleData.status,
-        notes: saleData.notes
+        paymentType: saleData.status,
+        notes: saleData.notes,
+        saleNumber: editingSale.saleNumber
       });
       setEditingSale(null);
     } else {
@@ -55,7 +49,8 @@ const Sales = () => {
         saleData.buyerAddress, 
         saleData.price, 
         saleData.date,
-        saleData.notes
+        saleData.notes,
+        saleData.status
       );
     }
     setIsModalOpen(false);
@@ -139,11 +134,12 @@ const Sales = () => {
               >
                 <div className="flex-1">
                   <div className={`font-bold mb-0.5 text-sm ${selectedSaleId === sale.id ? 'text-blue-700' : 'text-slate-700'}`}>
-                    {sale.customer}
+                    {sale.customerName}
                   </div>
+                  <div className="text-xs text-slate-400">{new Date(sale.date).toLocaleDateString()}</div>
                 </div>
                 <div className="text-right flex items-center gap-3">
-                  <div className="font-bold text-slate-800 text-sm">{sale.price} ₺</div>
+                  <div className="font-bold text-slate-800 text-sm">{sale.totalAmount} ₺</div>
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleDeleteSale(sale.id); }} 
                     className="text-slate-300 hover:text-red-500 transition-colors p-1"
@@ -184,14 +180,14 @@ const Sales = () => {
               <div className="text-slate-400"><CalendarIcon size={24} /></div>
               <div>
                 <p className="text-xs text-slate-500 mb-0.5 font-medium">Satış Tarihi</p>
-                <p className="font-bold text-slate-800 text-xs leading-tight whitespace-pre-line">{activeSale.date}</p>
+                <p className="font-bold text-slate-800 text-xs leading-tight whitespace-pre-line">{new Date(activeSale.date).toLocaleDateString()}</p>
               </div>
             </div>
             <div className="p-4 border border-slate-100 rounded-xl flex items-center gap-3">
               <div className="text-slate-400"><ShoppingBag size={24} /></div>
               <div>
                 <p className="text-xs text-slate-500 mb-0.5 font-medium">Toplam Tutar</p>
-                <p className="font-bold text-green-600 text-lg">{activeSale.price} ₺</p>
+                <p className="font-bold text-green-600 text-lg">{activeSale.totalAmount} ₺</p>
               </div>
             </div>
           </div>
@@ -203,15 +199,15 @@ const Sales = () => {
               <div className="space-y-3 text-sm text-slate-700">
                 <div className="flex items-center gap-3">
                   <User size={18} className="text-slate-400" />
-                  <span className="font-bold text-slate-800 text-base">{activeSale.customer}</span>
+                  <span className="font-bold text-slate-800 text-base">{activeSale.customerName}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone size={18} className="text-slate-400" />
-                  <span>{activeSale.buyerPhone || '-'}</span>
+                  <span>{activeSale.customerPhone || '-'}</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <MapPin size={18} className="text-slate-400 mt-0.5 shrink-0" />
-                  <span className="break-words">{activeSale.buyerAddress || '-'}</span>
+                  <span className="break-words">{activeSale.customerCity || '-'}</span>
                 </div>
               </div>
             </div>
@@ -229,46 +225,49 @@ const Sales = () => {
             <h4 className="text-blue-600 font-bold mb-4 text-sm">Satılan Kuşlar</h4>
             <div className="border border-slate-100 rounded-xl overflow-hidden">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/50 text-xs text-slate-500 border-b border-slate-100">
-                    <th className="font-medium p-3">Kuş No</th>
-                    <th className="font-medium p-3 text-center">Cinsiyet</th>
-                    <th className="font-medium p-3">Renk / Mutasyon</th>
-                    <th className="font-medium p-3 text-center">Yaş</th>
-                    <th className="font-medium p-3 text-right">Fiyat</th>
+                <thead className="bg-slate-50/50 text-slate-500 text-xs">
+                  <tr>
+                    <th className="p-3 text-left font-medium rounded-l-xl">Kuş No</th>
+                    <th className="p-3 text-center font-medium">Cinsiyet</th>
+                    <th className="p-3 text-right font-medium rounded-r-xl">
+                      {activeSaleDetails.length === 1 ? 'Fiyat' : ''}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="text-sm text-slate-700 divide-y divide-slate-50">
-                  {mockBirds.map(bird => (
-                    <tr key={bird.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-3 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-blue-50 border border-blue-100 flex items-center justify-center text-lg">
-                          🦜
-                        </div>
-                        <span className="font-medium">{bird.id}</span>
-                      </td>
-                      <td className="p-3 text-center">
-                        {bird.gender === 'male' 
-                          ? <span className="text-blue-500 font-bold text-lg">♂</span> 
-                          : <span className="text-pink-500 font-bold text-lg">♀</span>
-                        }
-                      </td>
-                      <td className="p-3">{bird.mutation}</td>
-                      <td className="p-3 text-center">{bird.age}</td>
-                      <td className="p-3 text-right font-medium">{bird.price}</td>
-                    </tr>
-                  ))}
+                  {activeSaleDetails.map(detail => {
+                    const bird = birds.find(b => b.id === detail.birdId);
+                    let genderDisplay = '-';
+                    if (bird) {
+                      if (bird.gender === 'Male') genderDisplay = <span className="text-blue-500 font-bold text-lg" title="Erkek">♂</span>;
+                      else if (bird.gender === 'Female') genderDisplay = <span className="text-pink-500 font-bold text-lg" title="Dişi">♀</span>;
+                      else genderDisplay = <span className="text-slate-400" title="Bilinmiyor">?</span>;
+                    }
+                    
+                    return (
+                      <tr key={detail.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-3 flex items-center gap-3">
+                          <div className="w-8 h-8 rounded bg-blue-50 border border-blue-100 flex items-center justify-center text-lg">
+                            🦜
+                          </div>
+                          <span className="font-medium">{detail.birdBandNumber || detail.birdId}</span>
+                        </td>
+                        <td className="p-3 text-center">{genderDisplay}</td>
+                        <td className="p-3 text-right font-medium">
+                          {activeSaleDetails.length === 1 ? `${detail.price} ₺` : '-'}
+                        </td>
+                      </tr>
+                    );
+                  })}
                   
                   {/* Totals Row */}
                   <tr>
-                    <td colSpan="3"></td>
-                    <td className="p-3 text-right font-medium text-slate-600">Ara Toplam</td>
-                    <td className="p-3 text-right font-bold text-slate-800">{activeSale.price} ₺</td>
+                    <td colSpan="2" className="p-3 text-right font-medium text-slate-600">Ara Toplam</td>
+                    <td className="p-3 text-right font-bold text-slate-800">{activeSale.totalAmount} ₺</td>
                   </tr>
                   <tr className="bg-green-50/30">
-                    <td colSpan="3"></td>
-                    <td className="p-3 text-right font-bold text-green-700 text-base">Toplam</td>
-                    <td className="p-3 text-right font-bold text-green-700 text-lg">{activeSale.price} ₺</td>
+                    <td colSpan="2" className="p-3 text-right font-bold text-green-700 text-base">Toplam</td>
+                    <td className="p-3 text-right font-bold text-green-700 text-lg">{activeSale.totalAmount} ₺</td>
                   </tr>
                 </tbody>
               </table>

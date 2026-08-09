@@ -17,20 +17,24 @@ export const DataProvider = ({ children }) => {
 
   const [apiClient, setApiClient] = useState(null);
 
-  const refreshData = async (clientToUse = apiClient) => {
+    const refreshData = async (clientToUse = apiClient) => {
     if (!clientToUse) return;
     setLoading(true);
     try {
-      const [birdsRes, nestsRes, pairsRes, carePlansRes] = await Promise.all([
+      const [birdsRes, nestsRes, pairsRes, carePlansRes, salesRes, transactionsRes] = await Promise.all([
         clientToUse.get('/Birds'),
         clientToUse.get('/Nests'),
         clientToUse.get('/Breeding/pairs').catch(() => ({ data: [] })),
-        clientToUse.get('/CarePlans').catch(() => ({ data: [] }))
+        clientToUse.get('/CarePlans').catch(() => ({ data: [] })),
+        clientToUse.get('/Sales').catch(() => ({ data: [] })),
+        clientToUse.get('/Transactions').catch(() => ({ data: [] }))
       ]);
       setBirds(birdsRes.data);
       setNests(nestsRes.data);
       setPairs(pairsRes.data);
       setCarePlans(carePlansRes.data);
+      setSales(salesRes.data);
+      setTransactions(transactionsRes.data);
       
       try {
          const eggsRes = await clientToUse.get('/Breeding/eggs');
@@ -95,43 +99,72 @@ export const DataProvider = ({ children }) => {
   };
 
   // 4. Satış İşlemi
-  const registerSale = (birdIds, customer, buyerPhone, buyerAddress, price, date, notes) => {
-    const ids = Array.isArray(birdIds) ? birdIds : [birdIds].filter(Boolean);
+  const registerSale = async (birdIds, customerName, customerPhone, customerCity, price, date, notes, paymentType = 'Nakit') => {
+    if (!apiClient) return;
+    try {
+      const ids = Array.isArray(birdIds) ? birdIds : [birdIds].filter(Boolean);
+      const parsedPrice = parseFloat(price) || 0;
+      const saleDetails = ids.map(id => ({ birdId: id, price: ids.length === 1 ? parsedPrice : 0 }));
+      
+      const payload = {
+        saleNumber: '',
+        date: date || new Date().toISOString().split('T')[0],
+        customerName: customerName,
+        customerPhone: customerPhone,
+        customerCity: customerCity,
+        paymentType: paymentType,
+        totalAmount: parsedPrice,
+        notes: notes,
+        saleDetails: saleDetails
+      };
 
-    // Kuş statüsü satıldı (4) yapılıyor
-    setBirds(prev => prev.map(b => ids.includes(b.id) ? { ...b, status: 4, aviaryName: 'Satıldı' } : b));
-
-    // Satış kaydı
-    const newSale = {
-      id: `S-${Date.now()}`,
-      birdIds: ids,
-      customer,
-      buyerPhone,
-      buyerAddress,
-      price,
-      date: date || new Date().toISOString().split('T')[0],
-      notes: notes || ''
-    };
-    setSales(prev => [newSale, ...prev]);
+      await apiClient.post('/Sales', payload);
+      await refreshData();
+      alert('Satış başarıyla kaydedildi.');
+    } catch (error) {
+      console.error("Sale register error:", error);
+      alert('Satış kaydedilirken hata oluştu.');
+    }
   };
 
-  const updateSale = (id, updatedData) => {
-    const sale = sales.find(s => s.id === id);
-    if (sale) {
-        const oldIds = sale.birdIds || [sale.birdId].filter(Boolean);
-        const newIds = updatedData.birdIds || [updatedData.birdId].filter(Boolean);
-        
-        const removedIds = oldIds.filter(x => !newIds.includes(x));
-        const addedIds = newIds.filter(x => !oldIds.includes(x));
-        
-        setBirds(birdsPrev => birdsPrev.map(b => {
-          if (removedIds.includes(b.id)) return { ...b, status: 1, aviaryName: 'Ana Salma' };
-          if (addedIds.includes(b.id)) return { ...b, status: 4, aviaryName: 'Satıldı' };
-          return b;
-        }));
-    }
+  const updateSale = async (id, updatedData) => {
+    if (!apiClient) return;
+    try {
+      const ids = Array.isArray(updatedData.birdIds) ? updatedData.birdIds : [updatedData.birdIds].filter(Boolean);
+      const parsedPrice = parseFloat(updatedData.price) || 0;
+      const saleDetails = ids.map(bid => ({ birdId: bid, price: ids.length === 1 ? parsedPrice : 0 }));
 
-    setSales(prev => prev.map(s => s.id === id ? { ...s, ...updatedData } : s));
+      const payload = {
+        saleNumber: updatedData.saleNumber || '',
+        date: updatedData.date || new Date().toISOString().split('T')[0],
+        customerName: updatedData.customerName,
+        customerPhone: updatedData.customerPhone,
+        customerCity: updatedData.customerCity,
+        paymentType: updatedData.paymentType || 'Nakit',
+        totalAmount: parsedPrice,
+        notes: updatedData.notes,
+        saleDetails: saleDetails
+      };
+
+      await apiClient.put(`/Sales/${id}`, payload);
+      await refreshData();
+      alert('Satış başarıyla güncellendi.');
+    } catch (error) {
+      console.error("Sale update error:", error);
+      alert('Satış güncellenirken hata oluştu.');
+    }
+  };
+
+  const deleteSale = async (id) => {
+    if (!apiClient) return;
+    try {
+      await apiClient.delete(`/Sales/${id}`);
+      await refreshData();
+      alert('Satış başarıyla iptal edildi, kuşlar ana salmaya alındı.');
+    } catch (error) {
+      console.error("Sale delete error:", error);
+      alert('Satış iptal edilirken hata oluştu.');
+    }
   };
 
   // 5. Basit Kuş Ekleme (Dışarıdan Alım vb)
@@ -262,16 +295,45 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  const addTransaction = (data) => {
-    setTransactions(prev => [{ ...data, id: Date.now() }, ...prev]);
+  const addTransaction = async (data) => {
+    if (!apiClient) return;
+    try {
+      const apiData = {
+        ...data,
+        type: data.type === 'Gelir' ? 'Income' : 'Expense'
+      };
+      const response = await apiClient.post('/Transactions', apiData);
+      setTransactions(prev => [response.data, ...prev]);
+    } catch (error) {
+      console.error('İşlem eklenirken hata:', error);
+      throw error;
+    }
   };
 
-  const updateTransaction = (id, updatedData) => {
-    setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updatedData } : t));
+  const updateTransaction = async (id, updatedData) => {
+    if (!apiClient) return;
+    try {
+      const apiData = {
+        ...updatedData,
+        type: updatedData.type === 'Gelir' ? 'Income' : 'Expense'
+      };
+      await apiClient.put(`/Transactions/${id}`, apiData);
+      setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...apiData } : t));
+    } catch (error) {
+      console.error('İşlem güncellenirken hata:', error);
+      throw error;
+    }
   };
 
-  const deleteTransaction = (id) => {
-    setTransactions(prev => prev.filter(t => t.id !== id));
+  const deleteTransaction = async (id) => {
+    if (!apiClient) return;
+    try {
+      await apiClient.delete(`/Transactions/${id}`);
+      setTransactions(prev => prev.filter(t => t.id !== id));
+    } catch (error) {
+      console.error('İşlem silinirken hata:', error);
+      throw error;
+    }
   };
 
   const addCarePlan = async (planData) => {
@@ -314,7 +376,7 @@ export const DataProvider = ({ children }) => {
       uploadBirdImage,
       deleteBird, setBirds,
       nests, setNests, addNest, deleteNest, updateNest,
-      sales, setSales, updateSale,
+      sales, setSales, updateSale, deleteSale,
       transactions, setTransactions, addTransaction, updateTransaction, deleteTransaction,
       carePlans, setCarePlans, addCarePlan, updateCarePlan, deleteCarePlan,
       pairs, setPairs,

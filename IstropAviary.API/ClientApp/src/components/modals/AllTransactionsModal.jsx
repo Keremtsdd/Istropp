@@ -10,11 +10,14 @@ const AllTransactionsModal = ({ isOpen, onClose, transactions, onEdit, onDelete 
   const filteredTransactions = useMemo(() => {
     let result = transactions;
     if (filterType !== 'Tümü') {
-      result = result.filter(t => t.type === filterType);
+      result = result.filter(t => {
+        const typeStr = (t.type === 'Income' || t.type === 'Gelir') ? 'Gelir' : 'Gider';
+        return typeStr === filterType;
+      });
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(t => t.desc?.toLowerCase().includes(q));
+      result = result.filter(t => t.description?.toLowerCase().includes(q));
     }
     return result;
   }, [transactions, filterType, searchQuery]);
@@ -83,24 +86,26 @@ const AllTransactionsModal = ({ isOpen, onClose, transactions, onEdit, onDelete 
                     İşlem bulunamadı.
                   </td>
                 </tr>
-              ) : filteredTransactions.map((tx) => (
+              ) : filteredTransactions.map((tx) => {
+                const typeStr = (tx.type === 'Income' || tx.type === 'Gelir') ? 'Gelir' : 'Gider';
+                return (
                 <tr key={tx.id} className="hover:bg-slate-50 transition-colors bg-white">
-                  <td className="p-4 pl-6 text-slate-500">{tx.date}</td>
-                  <td className="p-4 font-medium">{tx.desc}</td>
+                  <td className="p-4 pl-6 text-slate-500">{tx.date ? tx.date.split('T')[0] : ''}</td>
+                  <td className="p-4 font-medium">{tx.description}</td>
                   <td className="p-4 text-center">
                     <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold ${
-                      tx.type === 'Gelir' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      typeStr === 'Gelir' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                     }`}>
-                      {tx.type}
+                      {typeStr}
                     </span>
                   </td>
                   <td className={`p-4 text-right font-bold text-base ${
-                    tx.type === 'Gelir' ? 'text-green-600' : 'text-red-500'
+                    typeStr === 'Gelir' ? 'text-green-600' : 'text-red-500'
                   }`}>
                     {formatMoney(tx.amount)}
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
