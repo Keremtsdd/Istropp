@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Save } from 'lucide-react';
 
 const CarePlanModal = ({ isOpen, onClose, onSave, editingItem, selectedDay }) => {
@@ -40,9 +41,9 @@ const CarePlanModal = ({ isOpen, onClose, onSave, editingItem, selectedDay }) =>
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}></div>
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}></div>
 
       <div className="relative bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
@@ -113,6 +114,8 @@ const CarePlanModal = ({ isOpen, onClose, onSave, editingItem, selectedDay }) =>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default CarePlanModal;

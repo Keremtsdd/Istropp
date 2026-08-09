@@ -42,6 +42,7 @@ public class BreedingAutomationService : IBreedingAutomationService
 
     public async Task LogEggAsync(int pairId, DateTime laidDate)
     {
+        laidDate = laidDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(laidDate, DateTimeKind.Utc) : laidDate.ToUniversalTime();
         int hatchDuration = await _settings.GetIntSettingAsync("HatchDurationDays", 21);
         int candlingDays = await _settings.GetIntSettingAsync("CandlingDays", 7);
 
@@ -83,6 +84,7 @@ public class BreedingAutomationService : IBreedingAutomationService
 
     public async Task LogHatchAsync(int eggId, DateTime hatchDate)
     {
+        hatchDate = hatchDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(hatchDate, DateTimeKind.Utc) : hatchDate.ToUniversalTime();
         var egg = await _context.Eggs.Include(e => e.Pair).FirstOrDefaultAsync(e => e.Id == eggId);
         if (egg == null) throw new Exception("Yumurta bulunamadı.");
 
@@ -90,6 +92,25 @@ public class BreedingAutomationService : IBreedingAutomationService
 
         int bandingDays = await _settings.GetIntSettingAsync("BandingDays", 10);
         int weaningDays = await _settings.GetIntSettingAsync("WeaningDays", 35);
+
+        // Calculate next band number (Format: YYYY-NNN)
+        var currentYear = DateTime.UtcNow.Year.ToString();
+        var lastBandNumber = await _context.Birds
+            .Where(b => b.BandNumber.StartsWith(currentYear + "-"))
+            .Select(b => b.BandNumber)
+            .OrderByDescending(b => b)
+            .FirstOrDefaultAsync();
+
+        int nextNumber = 1;
+        if (!string.IsNullOrEmpty(lastBandNumber))
+        {
+            var parts = lastBandNumber.Split('-');
+            if (parts.Length == 2 && int.TryParse(parts[1], out int lastNum))
+            {
+                nextNumber = lastNum + 1;
+            }
+        }
+        string newBandNumber = $"{currentYear}-{nextNumber:D3}";
 
         // Create new Baby Bird
         var baby = new Bird
@@ -99,7 +120,7 @@ public class BreedingAutomationService : IBreedingAutomationService
             NestId = egg.Pair?.NestId,
             BirthDate = hatchDate,
             Status = BirdStatus.Chick,
-            BandNumber = "TBA" // To be assigned later
+            BandNumber = newBandNumber
         };
         _context.Birds.Add(baby);
         await _context.SaveChangesAsync(); // save to get Baby ID

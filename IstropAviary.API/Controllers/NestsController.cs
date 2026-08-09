@@ -34,11 +34,52 @@ public class NestsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<NestDto>> CreateNest(Nest nest)
+    public async Task<ActionResult<NestDto>> CreateNest(NestCreateDto dto)
     {
+        var nest = new Nest
+        {
+            NestCode = dto.NestCode,
+            Status = dto.Status,
+            AviaryId = dto.AviaryId
+        };
         _context.Nests.Add(nest);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetNests), new { id = nest.Id }, _mapper.Map<NestDto>(nest));
+        var createdNest = await _context.Nests
+            .Include(n => n.Aviary)
+            .FirstOrDefaultAsync(n => n.Id == nest.Id);
+
+        return CreatedAtAction(nameof(GetNests), new { id = nest.Id }, _mapper.Map<NestDto>(createdNest));
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult<NestDto>> UpdateNest(int id, NestCreateDto dto)
+    {
+        var nest = await _context.Nests.FindAsync(id);
+        if (nest == null) return NotFound();
+
+        nest.NestCode = dto.NestCode;
+        nest.Status = dto.Status;
+        nest.AviaryId = dto.AviaryId;
+
+        await _context.SaveChangesAsync();
+
+        var updatedNest = await _context.Nests
+            .Include(n => n.Aviary)
+            .FirstOrDefaultAsync(n => n.Id == id);
+
+        return Ok(_mapper.Map<NestDto>(updatedNest));
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteNest(int id)
+    {
+        var nest = await _context.Nests.FindAsync(id);
+        if (nest == null) return NotFound();
+
+        _context.Nests.Remove(nest);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 }

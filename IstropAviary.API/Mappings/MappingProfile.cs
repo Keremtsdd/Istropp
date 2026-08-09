@@ -43,9 +43,7 @@ public class MappingProfile : Profile
         CreateMap<TransactionCreateDto, Transaction>();
 
         // CarePlan mappings
-        CreateMap<CarePlan, CarePlanDto>()
-            .ForMember(dest => dest.RelatedBirdBand, opt => opt.MapFrom(src => src.RelatedBird != null ? src.RelatedBird.BandNumber : null))
-            .ForMember(dest => dest.RelatedNestCode, opt => opt.MapFrom(src => src.RelatedNest != null ? src.RelatedNest.NestCode : null));
+        CreateMap<CarePlan, CarePlanDto>();
         CreateMap<CarePlanCreateDto, CarePlan>();
     }
 }

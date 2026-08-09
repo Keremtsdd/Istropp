@@ -137,3 +137,4 @@ C:\Users\tastk\OneDrive\Documents\GitHub\Istrop\IstropAviary.API\bin\Debug\net9.
 C:\Users\tastk\OneDrive\Documents\GitHub\Istrop\IstropAviary.API\bin\Debug\net9.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 C:\Users\tastk\OneDrive\Documents\GitHub\Istrop\IstropAviary.API\bin\Debug\net9.0\Microsoft.IdentityModel.Tokens.dll
 C:\Users\tastk\OneDrive\Documents\GitHub\Istrop\IstropAviary.API\bin\Debug\net9.0\System.IdentityModel.Tokens.Jwt.dll
+C:\Users\tastk\OneDrive\Documents\GitHub\Istrop\IstropAviary.API\bin\Debug\net9.0\IstropAviary.API.staticwebassets.runtime.json

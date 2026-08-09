@@ -46,21 +46,11 @@ public class DashboardController : ControllerBase
             .Where(t => t.Date >= firstDayOfMonth && t.Type == TransactionType.Expense)
             .SumAsync(t => t.Amount);
             
-        var upcomingPlans = await _context.CarePlans
-            .Where(c => c.Date >= DateTime.UtcNow && c.Date <= DateTime.UtcNow.AddDays(7))
-            .OrderBy(c => c.Date)
-            .Take(3)
-            .ToListAsync();
-
         var today = DateTime.UtcNow.Date;
 
         var upcomingHatches = await _context.Clutches
             .Include(c => c.Nest)
             .Where(c => c.Status == EggStatus.Incubating && c.HatchDate.HasValue && c.HatchDate.Value.Date >= today && c.HatchDate.Value.Date <= today.AddDays(2))
-            .ToListAsync();
-
-        var todayCarePlans = await _context.CarePlans
-            .Where(c => c.Date.Date == today)
             .ToListAsync();
 
         var alerts = new List<DashboardAlertDto>();
@@ -76,23 +66,13 @@ public class DashboardController : ControllerBase
             });
         }
 
-        foreach(var care in todayCarePlans)
-        {
-            alerts.Add(new DashboardAlertDto {
-                Type = "Care",
-                Message = $"Bakım Görevi: {care.Title}",
-                Severity = "Info",
-                Date = care.Date
-            });
-        }
-
         return Ok(new DashboardDto
         {
             TotalBirds = totalBirds,
             ActiveNests = activeNests,
             MonthlySales = monthlySales,
             NetProfit = monthlyIncome - monthlyExpense,
-            UpcomingCarePlans = _mapper.Map<List<CarePlanDto>>(upcomingPlans),
+            UpcomingCarePlans = new List<CarePlanDto>(), // Care plans are now template based
             TodayTasks = alerts.OrderBy(a => a.Date).ToList()
         });
     }

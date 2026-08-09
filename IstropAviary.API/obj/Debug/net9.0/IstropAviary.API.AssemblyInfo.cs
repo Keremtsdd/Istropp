@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("IstropAviary.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7db005a6c1dd445beb145675f49818e4426eab61")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fcd8e30574600522a7bd465999e4d772fc09629e")]
 [assembly: System.Reflection.AssemblyProductAttribute("IstropAviary.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("IstropAviary.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

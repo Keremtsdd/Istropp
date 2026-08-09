@@ -10,53 +10,55 @@ import PedigreeTree from './PedigreeTree';
 import { GitMerge } from 'lucide-react';
 
 const BirdDetail = ({ bird, onBack }) => {
-  const { birds, updateBird } = useData();
+  const { birds, updateBird, uploadBirdImage } = useData();
 
   // Find parents
   const father = birds.find(b => b.id === bird.fatherId);
   const mother = birds.find(b => b.id === bird.motherId);
 
   const getStatusColor = (status) => {
-    switch(parseInt(status) || status) {
-      case 1: 
-      case 'Damızlık': return 'bg-green-100 text-green-700';
-      case 2:
-      case 'Yavru': return 'bg-blue-100 text-blue-700';
-      case 3:
-      case 'Dinlenmede': return 'bg-amber-100 text-amber-700';
-      case 4:
-      case 'Satılık': return 'bg-purple-100 text-purple-700';
-      default: return 'bg-slate-100 text-slate-700';
-    }
+    const s = String(status).toLowerCase();
+    if (s === '0' || s === 'breeder') return 'bg-emerald-100 text-emerald-700';
+    if (s === '1' || s === 'chick') return 'bg-amber-100 text-amber-700';
+    if (s === '2' || s === 'forsale') return 'bg-blue-100 text-blue-700';
+    if (s === '3' || s === 'sold') return 'bg-slate-100 text-slate-700';
+    if (s === '4' || s === 'intreatment') return 'bg-purple-100 text-purple-700';
+    if (s === '5' || s === 'deceased') return 'bg-red-100 text-red-700';
+    return 'bg-emerald-100 text-emerald-700';
   };
 
   const statusText = (status) => {
-    switch(parseInt(status) || status) {
-      case 1: return 'Damızlık';
-      case 2: return 'Yavru';
-      case 3: return 'Dinlenmede';
-      case 4: return 'Satılık';
-      default: return status || 'Bilinmiyor';
-    }
+    const s = String(status).toLowerCase();
+    if (s === '0' || s === 'breeder') return 'Damızlık';
+    if (s === '1' || s === 'chick') return 'Yavru';
+    if (s === '2' || s === 'forsale') return 'Satılık';
+    if (s === '3' || s === 'sold') return 'Satıldı';
+    if (s === '4' || s === 'intreatment') return 'Tedavide';
+    if (s === '5' || s === 'deceased') return 'Öldü';
+    return 'Damızlık';
   };
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const handleEditSave = async (updatedData) => {
-    updateBird(bird.id, updatedData);
+  const handleEditSave = async (updatedData, imageFile) => {
+    await updateBird(bird.id, updatedData);
+    if (imageFile) {
+      await uploadBirdImage(bird.id, imageFile);
+    }
     setIsEditModalOpen(false);
   };
 
   // Photo Upload Logic
   const fileInputRef = useRef(null);
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateBird(bird.id, { photo: reader.result });
-      };
-      reader.readAsDataURL(file);
+      try {
+        const newImageUrl = await uploadBirdImage(bird.id, file);
+        // HMR / context updates the state, but we might want to manually update the local prop reference or wait for re-render
+      } catch (error) {
+        console.error("Fotoğraf yükleme başarısız:", error);
+      }
     }
   };
 
@@ -97,7 +99,7 @@ const BirdDetail = ({ bird, onBack }) => {
           <div className="relative aspect-square bg-slate-100">
             {/* Kuş Resmi Placeholder veya Gerçek Resim */}
             <img 
-              src={bird.photo || `https://ui-avatars.com/api/?name=${bird.bandNumber}&background=f1f5f9&color=94a3b8&size=512&font-size=0.15`}
+              src={bird.imageUrl ? `http://localhost:5010${bird.imageUrl}` : `https://ui-avatars.com/api/?name=${bird.bandNumber}&background=f1f5f9&color=94a3b8&size=512&font-size=0.15`}
               alt={bird.bandNumber}
               className="w-full h-full object-cover"
             />
@@ -193,20 +195,12 @@ const BirdDetail = ({ bird, onBack }) => {
                   <div className="flex justify-between border-b border-slate-50 pb-3">
                     <span className="text-slate-500 text-sm">Cinsiyet</span>
                     <span className="font-semibold text-slate-800 flex items-center gap-1">
-                      {bird.gender === 0 || bird.gender === '0' || bird.gender === 'Erkek' || bird.gender === 'male' ? (
+                      {String(bird.gender).toLowerCase() === '0' || String(bird.gender).toLowerCase() === 'male' || String(bird.gender).toLowerCase() === 'erkek' ? (
                         <><span className="text-blue-500">♂</span> Erkek</>
-                      ) : bird.gender === 1 || bird.gender === '1' || bird.gender === 'Dişi' || bird.gender === 'female' ? (
+                      ) : String(bird.gender).toLowerCase() === '1' || String(bird.gender).toLowerCase() === 'female' || String(bird.gender).toLowerCase() === 'dişi' ? (
                         <><span className="text-pink-500">♀</span> Dişi</>
                       ) : 'Bilinmiyor'}
                     </span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-50 pb-3">
-                    <span className="text-slate-500 text-sm">Doğum Tarihi</span>
-                    <span className="font-semibold text-slate-800">{bird.birthDate || '-'}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-50 pb-3">
-                    <span className="text-slate-500 text-sm">Yaş</span>
-                    <span className="font-semibold text-slate-800">-</span>
                   </div>
                   <div className="flex justify-between border-b border-slate-50 pb-3">
                     <span className="text-slate-500 text-sm">Durum</span>

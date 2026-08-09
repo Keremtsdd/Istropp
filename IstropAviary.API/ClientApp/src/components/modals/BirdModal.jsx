@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, AlertCircle, ChevronDown } from 'lucide-react';
+import { X, Save, AlertCircle, ChevronDown, Camera } from 'lucide-react';
 
 const FormDropdown = ({ options, value, onChange, placeholder = "Seçiniz..." }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -58,8 +58,11 @@ const BirdModal = ({ isOpen, onClose, onSave, birdsList, initialData = null }) =
     motherId: '',
     fatherId: ''
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
+    setImageFile(null);
     if (initialData) {
       setFormData({
         bandNumber: initialData.bandNumber || '',
@@ -67,10 +70,40 @@ const BirdModal = ({ isOpen, onClose, onSave, birdsList, initialData = null }) =
         motherId: initialData.motherId || '',
         fatherId: initialData.fatherId || ''
       });
+      setImagePreview(initialData.imageUrl ? `http://localhost:5010${initialData.imageUrl}` : null);
     } else {
-      setFormData({ bandNumber: '', gender: 0, motherId: '', fatherId: '' });
+      setImagePreview(null);
+      // Calculate next band number
+      let nextBand = '';
+      if (birdsList && birdsList.length > 0) {
+        let maxNum = -1;
+        let prefix = '';
+        let paddingLength = 3;
+
+        birdsList.forEach(bird => {
+          const band = bird.bandNumber;
+          if (band) {
+            const match = band.match(/^(.*?)(\d+)$/);
+            if (match) {
+              const numStr = match[2];
+              const num = parseInt(numStr, 10);
+              if (num > maxNum) {
+                maxNum = num;
+                prefix = match[1];
+                paddingLength = numStr.length;
+              }
+            }
+          }
+        });
+
+        if (maxNum !== -1) {
+          nextBand = prefix + String(maxNum + 1).padStart(paddingLength, '0');
+        }
+      }
+
+      setFormData({ bandNumber: nextBand, gender: 0, motherId: '', fatherId: '' });
     }
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, birdsList]);
 
   const [loading, setLoading] = useState(false);
 
@@ -92,18 +125,18 @@ const BirdModal = ({ isOpen, onClose, onSave, birdsList, initialData = null }) =
     const dataToSubmit = {
       ...formData,
       gender: parseInt(formData.gender),
-      status: 1, // Default olarak Damızlık eklenecek arka planda
+      status: 0, // 0 = Breeder (Damızlık). Yavru (1) sadece otomatik eklendiğinde.
       mutation: 'Bilinmiyor',
       motherId: formData.motherId ? parseInt(formData.motherId) : null,
       fatherId: formData.fatherId ? parseInt(formData.fatherId) : null,
     };
 
     try {
-      await onSave(dataToSubmit);
-      // Reset form
-      setFormData({
-        bandNumber: '', gender: 0, motherId: '', fatherId: ''
-      });
+      if (initialData) {
+        await onSave({ ...dataToSubmit, id: initialData.id }, imageFile);
+      } else {
+        await onSave(dataToSubmit, imageFile);
+      }
       onClose();
     } catch (error) {
       console.error("Kaydedilemedi", error);
@@ -138,6 +171,37 @@ const BirdModal = ({ isOpen, onClose, onSave, birdsList, initialData = null }) =
         <div className="p-6">
           <form id="birdForm" onSubmit={handleSubmit} className="space-y-5">
             
+            {/* Fotoğraf Yükleme Alanı */}
+            <div className="flex flex-col items-center justify-center">
+              <label className="relative cursor-pointer group">
+                <div className={`w-24 h-24 rounded-full flex items-center justify-center overflow-hidden border-2 border-dashed ${imagePreview ? 'border-transparent' : 'border-slate-300 hover:border-blue-500'} bg-slate-50 transition-colors`}>
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-slate-400 flex flex-col items-center mt-2">
+                      <Camera size={24} className="mb-1 text-slate-300" />
+                      <span className="text-[10px] font-bold">FOTOĞRAF</span>
+                    </div>
+                  )}
+                </div>
+                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-white text-xs font-semibold">Değiştir</span>
+                </div>
+                <input 
+                  type="file" 
+                  accept="image/png, image/jpeg, image/webp" 
+                  className="hidden" 
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setImageFile(file);
+                      setImagePreview(URL.createObjectURL(file));
+                    }
+                  }} 
+                />
+              </label>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2 sm:col-span-1">
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Bilezik No *</label>

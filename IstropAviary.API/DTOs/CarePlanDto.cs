@@ -1,29 +1,23 @@
 using System;
 
-namespace IstropAviary.API.DTOs;
-
-public class CarePlanDto
+namespace IstropAviary.API.DTOs
 {
-    public int Id { get; set; }
-    public DateTime Date { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public string? Type { get; set; } 
+    public class CarePlanDto
+    {
+        public int Id { get; set; }
+        public int DayNumber { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Purpose { get; set; }
+        public string? WaterDosage { get; set; }
+        public string? FoodDosage { get; set; }
+    }
 
-    public int? RelatedBirdId { get; set; }
-    public string? RelatedBirdBand { get; set; }
-
-    public int? RelatedNestId { get; set; }
-    public string? RelatedNestCode { get; set; }
-}
-
-public class CarePlanCreateDto
-{
-    public DateTime Date { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public string? Type { get; set; } 
-
-    public int? RelatedBirdId { get; set; }
-    public int? RelatedNestId { get; set; }
+    public class CarePlanCreateDto
+    {
+        public int DayNumber { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Purpose { get; set; }
+        public string? WaterDosage { get; set; }
+        public string? FoodDosage { get; set; }
+    }
 }

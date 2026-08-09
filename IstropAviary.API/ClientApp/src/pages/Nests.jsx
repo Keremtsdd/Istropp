@@ -9,7 +9,7 @@ import NestModal from '../components/modals/NestModal';
 import NestDetail from '../components/nests/NestDetail';
 
 const Nests = () => {
-  const { nests, setNests, deleteNest, updateNest, clutches, eggs, birds } = useData();
+  const { nests, setNests, addNest, deleteNest, updateNest, pairs, eggs, birds } = useData();
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingNest, setEditingNest] = useState(null);
@@ -31,33 +31,56 @@ const Nests = () => {
 
   // Dinamik Yuvalık Listesi
   const dynamicNests = nests.map(nest => {
-    const activeClutch = clutches.find(c => c.nestId === nest.id && c.status === 'Aktif');
-    const clutchEggs = activeClutch ? eggs.filter(e => e.clutchId === activeClutch.id) : [];
+    const activePair = pairs.find(p => p.nestId === nest.id && p.isActive);
+    const pairEggs = activePair ? eggs.filter(e => e.pairId === activePair.id) : [];
     
-    const maleBird = activeClutch ? birds.find(b => b.id === activeClutch.maleId) : null;
-    const femaleBird = activeClutch ? birds.find(b => b.id === activeClutch.femaleId) : null;
+    const maleBird = activePair ? birds.find(b => b.id === activePair.maleId) : null;
+    const femaleBird = activePair ? birds.find(b => b.id === activePair.femaleId) : null;
 
-    const eggCount = clutchEggs.length;
-    const chickCount = clutchEggs.filter(e => e.status === 'Çıktı').length;
-    
-    let status = 'Boş';
-    if (activeClutch) {
-      if (chickCount > 0) status = 'Yavrulu';
-      else if (eggCount > 0) status = 'Aktif';
-      else status = 'Hazırlık';
+    let progressDays = 0;
+    let totalIncubationDays = 0;
+
+    const incubatingEggs = pairEggs.filter(e => e.status !== 'Hatched' && e.status !== 1 && e.status !== 'Boş');
+    if (incubatingEggs.length > 0) {
+      const oldestEgg = incubatingEggs.reduce((oldest, current) => {
+        const oldestDate = new Date(oldest.layDate || oldest.laidDate).getTime();
+        const currentDate = new Date(current.layDate || current.laidDate).getTime();
+        return oldestDate < currentDate ? oldest : current;
+      });
+      
+      const start = new Date(oldestEgg.layDate || oldestEgg.laidDate).getTime();
+      const end = new Date(oldestEgg.estimatedHatchDate).getTime();
+      const now = new Date().getTime();
+      
+      if (end > start) {
+        totalIncubationDays = Math.round((end - start) / (1000 * 60 * 60 * 24));
+        const elapsed = Math.round((now - start) / (1000 * 60 * 60 * 24));
+        progressDays = Math.max(0, Math.min(elapsed, totalIncubationDays));
+      }
     }
+
+    const hatchCount = pairEggs.filter(e => e.status === 'Hatched' || e.status === 1).length;
+    const eggCount = pairEggs.length;
+
+    let derivedStatus = 'Boş';
+    if (hatchCount > 0) derivedStatus = 'Yavrulu';
+    else if (eggCount > 0) derivedStatus = 'Aktif';
+    else if (activePair) derivedStatus = 'Hazırlık';
 
     return {
       ...nest,
-      status,
+      id: nest.id,
+      code: nest.nestCode,
+      status: derivedStatus,
       maleBand: maleBird ? maleBird.bandNumber : '-',
       femaleBand: femaleBird ? femaleBird.bandNumber : '-',
       eggs: eggCount,
-      chicks: chickCount,
-      progress: chickCount > 0 ? 21 : (eggCount > 0 ? 10 : 0),
-      totalDays: activeClutch ? 21 : 0,
-      nextAction: status === 'Boş' ? 'Çift bekleniyor' : (status === 'Hazırlık' ? 'Yumurta bekleniyor' : (status === 'Aktif' ? 'Yavru çıkışı bekleniyor' : 'Yavru büyümesi')),
-      nextActionTime: status === 'Boş' ? '-' : 'Yakında'
+      chicks: hatchCount,
+      progress: progressDays,
+      totalDays: totalIncubationDays,
+      nextAction: nest.nextAction || 'İşlem yok',
+      nextActionDate: nest.nextActionDate || '-',
+      pairId: activePair ? activePair.id : null
     };
   });
 
@@ -85,7 +108,7 @@ const Nests = () => {
     bos: dynamicNests.filter(n => n.status === 'Boş').length,
   };
 
-  const handleSaveNest = (nestData, id) => {
+  const handleSaveNest = async (nestData, id) => {
     const isDuplicate = nests.some(n => 
       n.id !== id && 
       n.nestCode.toLowerCase().replace(/[\s-]/g, '') === nestData.nestCode.toLowerCase().replace(/[\s-]/g, '')
@@ -96,22 +119,17 @@ const Nests = () => {
       return false;
     }
 
-    if (id) {
-      updateNest(id, nestData);
-    } else {
-      const newNest = {
-        ...nestData,
-        id: Date.now(),
-        maleBand: '-',
-        femaleBand: '-',
-        eggs: 0,
-        chicks: 0,
-        progress: 0,
-        totalDays: 0
-      };
-      setNests(prev => [...prev, newNest]);
+    try {
+      if (id) {
+        await updateNest(id, nestData);
+      } else {
+        await addNest(nestData);
+      }
+      return true;
+    } catch (error) {
+      alert("Yuvalık kaydedilirken bir hata oluştu.");
+      return false;
     }
-    return true;
   };
 
   const getStatusColor = (status) => {
@@ -261,7 +279,7 @@ const Nests = () => {
                   {/* Progress Bar */}
                   <div className="mb-4">
                     <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1.5">
-                      <div className={`h-full ${statusStyle.bar} rounded-full`} style={{ width: `${progressPercent}%` }}></div>
+                      <div className={`h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full`} style={{ width: `${progressPercent}%` }}></div>
                     </div>
                     <div className="text-right text-[11px] font-bold text-slate-400">
                       {nest.totalDays > 0 ? `${nest.progress} / ${nest.totalDays} Gün` : '-'}

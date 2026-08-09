@@ -15,3 +15,10 @@ public class NestDto
     public string? NextAction { get; set; }
     public DateTime? NextActionDate { get; set; }
 }
+
+public class NestCreateDto
+{
+    public string NestCode { get; set; } = string.Empty;
+    public NestStatus Status { get; set; } = NestStatus.Empty;
+    public int? AviaryId { get; set; }
+}

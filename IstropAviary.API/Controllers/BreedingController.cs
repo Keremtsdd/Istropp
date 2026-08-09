@@ -59,4 +59,15 @@ public class BreedingController : ControllerBase
         await _breedingService.LogHatchAsync(request.EggId, request.HatchDate);
         return Ok(new { message = "Yavru çıkışı kaydedildi, bilezikleme ve yeme düşme görevleri planlandı." });
     }
+
+    [HttpDelete("egg/{id}")]
+    public async Task<IActionResult> DeleteEgg(int id, [FromServices] AppDbContext context)
+    {
+        var egg = await context.Eggs.FindAsync(id);
+        if (egg == null) return NotFound(new { message = "Yumurta bulunamadı." });
+
+        context.Eggs.Remove(egg);
+        await context.SaveChangesAsync();
+        return Ok(new { message = "Yumurta başarıyla silindi." });
+    }
 }

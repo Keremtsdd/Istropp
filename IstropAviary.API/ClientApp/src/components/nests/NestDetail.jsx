@@ -52,15 +52,38 @@ const FormDropdown = ({ options, value, onChange, placeholder = "Seçiniz..." })
 };
 
 const NestDetail = ({ nest, onBack }) => {
-  const { birds, clutches, eggs, deleteEgg, pairBirds, registerEgg, registerHatch } = useData();
+  const { pairs, eggs, birds, pairBirds, registerEgg, registerHatch, deleteEgg } = useData();
   const [selectedMale, setSelectedMale] = useState('');
   const [selectedFemale, setSelectedFemale] = useState('');
 
-  // Find active clutch for this nest
-  const activeClutch = clutches.find(c => c.nestId === nest.id && c.status === 'Aktif');
+  // Find active pair for this nest
+  const activePair = pairs.find(p => p.nestId === nest.id && p.isActive);
   
-  // Find eggs for active clutch
-  const clutchEggs = activeClutch ? eggs.filter(e => e.clutchId === activeClutch.id) : [];
+  // Find eggs for active pair
+  const pairEggs = activePair ? eggs.filter(e => e.pairId === activePair.id) : [];
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    try {
+      return new Date(dateString).toLocaleDateString('tr-TR', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+    } catch { return '-'; }
+  };
+
+  const calculateProgress = (laidDate, estimatedHatchDate) => {
+    if (!laidDate || !estimatedHatchDate) return 0;
+    try {
+      const start = new Date(laidDate).getTime();
+      const end = new Date(estimatedHatchDate).getTime();
+      const now = new Date().getTime();
+      if (now >= end) return 100;
+      if (now <= start) return 0;
+      const total = end - start;
+      const elapsed = now - start;
+      return Math.round((elapsed / total) * 100);
+    } catch { return 0; }
+  };
 
   const handlePair = () => {
     if (!selectedMale || !selectedFemale) return alert('Erkek ve Dişi seçiniz');
@@ -68,9 +91,9 @@ const NestDetail = ({ nest, onBack }) => {
   };
 
   const handleAddEgg = () => {
-    if(!activeClutch) return;
+    if(!activePair) return;
     const today = new Date().toISOString().split('T')[0];
-    registerEgg(activeClutch.id, today);
+    registerEgg(activePair.id, today);
   };
 
   const handleHatch = (eggId) => {
@@ -85,8 +108,21 @@ const NestDetail = ({ nest, onBack }) => {
   };
 
   // Sadece satılık olmayan (status !== 4) kuşlar eşleştirilebilir
-  const availableMales = birds.filter(b => (b.gender === 0 || b.gender === '0' || b.gender === 'Erkek') && parseInt(b.status) !== 4);
-  const availableFemales = birds.filter(b => (b.gender === 1 || b.gender === '1' || b.gender === 'Dişi') && parseInt(b.status) !== 4);
+  const availableMales = birds.filter(b => {
+    const g = String(b.gender).toLowerCase();
+    const s = String(b.status).toLowerCase();
+    const isMale = g === '0' || g === 'male' || g === 'erkek';
+    const isUnavailable = s === '3' || s === 'sold' || s === '5' || s === 'deceased';
+    return isMale && !isUnavailable;
+  });
+  
+  const availableFemales = birds.filter(b => {
+    const g = String(b.gender).toLowerCase();
+    const s = String(b.status).toLowerCase();
+    const isFemale = g === '1' || g === 'female' || g === 'dişi';
+    const isUnavailable = s === '3' || s === 'sold' || s === '5' || s === 'deceased';
+    return isFemale && !isUnavailable;
+  });
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-10">
@@ -105,7 +141,7 @@ const NestDetail = ({ nest, onBack }) => {
 
       <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
 
-        {!activeClutch ? (
+        {!activePair ? (
           <div className="space-y-6">
             <div className="flex items-center gap-2 mb-2">
               <Heart size={20} className="text-pink-500" />
@@ -163,7 +199,7 @@ const NestDetail = ({ nest, onBack }) => {
                     <span className="text-3xl leading-none">♂</span>
                   </div>
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Baba (Erkek)</p>
-                  <p className="font-bold text-lg text-slate-800">{birds.find(b => b.id === activeClutch.maleId)?.bandNumber || 'Bilinmiyor'}</p>
+                  <p className="font-bold text-lg text-slate-800">{birds.find(b => b.id === activePair.maleId)?.bandNumber || 'Bilinmiyor'}</p>
                 </div>
                 
                 <div className="w-px bg-gradient-to-b from-transparent via-slate-200 to-transparent"></div>
@@ -173,7 +209,7 @@ const NestDetail = ({ nest, onBack }) => {
                     <span className="text-3xl leading-none">♀</span>
                   </div>
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Anne (Dişi)</p>
-                  <p className="font-bold text-lg text-slate-800">{birds.find(b => b.id === activeClutch.femaleId)?.bandNumber || 'Bilinmiyor'}</p>
+                  <p className="font-bold text-lg text-slate-800">{birds.find(b => b.id === activePair.femaleId)?.bandNumber || 'Bilinmiyor'}</p>
                 </div>
               </div>
             </div>
@@ -193,14 +229,14 @@ const NestDetail = ({ nest, onBack }) => {
                 </button>
               </div>
 
-              {clutchEggs.length === 0 ? (
+              {pairEggs.length === 0 ? (
                 <div className="text-center py-10 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
                   <Egg size={32} className="mx-auto text-slate-300 mb-3" />
                   <p className="text-slate-500 font-medium">Bu kuluçkada henüz yumurta kaydı yok.</p>
                 </div>
               ) : (
                 <div className="grid gap-3">
-                  {clutchEggs.map((egg, index) => (
+                  {pairEggs.map((egg, index) => (
                     <div 
                       key={egg.id} 
                       className="group flex flex-col sm:flex-row justify-between sm:items-center gap-4 p-5 border border-slate-200 rounded-2xl bg-white hover:border-amber-200 hover:shadow-md transition-all"
@@ -212,15 +248,20 @@ const NestDetail = ({ nest, onBack }) => {
                         <div>
                           <p className="font-bold text-slate-800 text-base mb-1">{index + 1}. Yumurta</p>
                           <div className="flex items-center gap-3 text-xs font-medium text-slate-500">
-                            <span className="flex items-center gap-1"><CalendarDays size={14}/> {egg.layDate}</span>
+                            <span className="flex items-center gap-1"><CalendarDays size={14}/> {formatDate(egg.layDate || egg.laidDate)}</span>
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                            <span>Tahmini Çıkış: <span className="text-slate-700">{egg.estimatedHatchDate}</span></span>
+                            <span>Tahmini Çıkış: <span className="text-slate-700">{formatDate(egg.estimatedHatchDate)}</span></span>
                           </div>
+                          {egg.status !== 'Hatched' && egg.status !== 1 && (
+                            <div className="mt-3 w-full bg-slate-100 rounded-full h-1.5 min-w-[200px]">
+                              <div className="bg-amber-400 h-1.5 rounded-full transition-all duration-500" style={{width: `${calculateProgress(egg.layDate || egg.laidDate, egg.estimatedHatchDate)}%`}}></div>
+                            </div>
+                          )}
                         </div>
                       </div>
                       
                       <div className="flex justify-end gap-2">
-                        {egg.status === 'Dolu' ? (
+                        {egg.status === 'Dolu' || egg.status === 'Incubating' || egg.status === 0 ? (
                           <button 
                             onClick={() => handleHatch(egg.id)}
                             className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-4 py-2 rounded-xl font-bold text-sm transition-all shadow-md shadow-emerald-500/20"
@@ -228,8 +269,12 @@ const NestDetail = ({ nest, onBack }) => {
                             <Check size={16} /> Yavru Çıktı
                           </button>
                         ) : (
-                          <span className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-sm font-bold border border-slate-200">
-                            {egg.status}
+                          <span className={`px-4 py-2 rounded-xl text-sm font-bold border ${
+                            egg.status === 'Hatched' || egg.status === 1 
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
+                              : 'bg-slate-100 text-slate-600 border-slate-200'
+                          }`}>
+                            {egg.status === 'Hatched' || egg.status === 1 ? 'Yavru Çıktı' : egg.status}
                           </span>
                         )}
                         <button

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react';
 
 const DataContext = createContext();
@@ -5,53 +6,50 @@ const DataContext = createContext();
 export const useData = () => useContext(DataContext);
 
 export const DataProvider = ({ children }) => {
-  // Try to load initial data from localStorage
-  const loadData = (key, defaultData) => {
-    try {
-      const stored = localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : defaultData;
-    } catch {
-      return defaultData;
-    }
-  };
-
   const [birds, setBirds] = useState([]);
   const [nests, setNests] = useState([]);
   const [sales, setSales] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [carePlans, setCarePlans] = useState([]);
-  const [clutches, setClutches] = useState([]);
+  const [pairs, setPairs] = useState([]);
   const [eggs, setEggs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [apiClient, setApiClient] = useState(null);
+
+  const refreshData = async (clientToUse = apiClient) => {
+    if (!clientToUse) return;
+    setLoading(true);
+    try {
+      const [birdsRes, nestsRes, pairsRes, carePlansRes] = await Promise.all([
+        clientToUse.get('/Birds'),
+        clientToUse.get('/Nests'),
+        clientToUse.get('/Breeding/pairs').catch(() => ({ data: [] })),
+        clientToUse.get('/CarePlans').catch(() => ({ data: [] }))
+      ]);
+      setBirds(birdsRes.data);
+      setNests(nestsRes.data);
+      setPairs(pairsRes.data);
+      setCarePlans(carePlansRes.data);
+      
+      try {
+         const eggsRes = await clientToUse.get('/Breeding/eggs');
+         setEggs(eggsRes.data);
+      } catch {
+        // Ignore if endpoint is not available
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     import('../api/axiosClient').then(module => {
       const client = module.default;
       setApiClient(() => client);
-
-      // Fetch initial data from API
-      const fetchData = async () => {
-        try {
-          const [birdsRes, nestsRes, clutchesRes] = await Promise.all([
-            client.get('/Birds'),
-            client.get('/Nests'),
-            client.get('/Clutches').catch(() => ({ data: [] }))
-          ]);
-          setBirds(birdsRes.data);
-          setNests(nestsRes.data);
-          setClutches(clutchesRes.data);
-          
-          try {
-             const eggsRes = await client.get('/Breeding/eggs');
-             setEggs(eggsRes.data);
-          } catch(e) {}
-        } catch (error) {
-          console.error("API Fetch Error:", error);
-        }
-      };
-
-      fetchData();
+      refreshData(client);
     });
   }, []);
 
@@ -62,9 +60,7 @@ export const DataProvider = ({ children }) => {
     if (!apiClient) return;
     try {
       await apiClient.post('/Breeding/pair', { maleId, femaleId, nestId });
-      // To show immediate feedback without full refresh, we could just reload page or fetch data.
-      // For now, let's just trigger a reload to fetch new data (if fetching was implemented).
-      // Since fetching isn't fully implemented in Context yet, we will just alert for now.
+      await refreshData();
       alert('Kuşlar başarıyla eşleştirildi (Sunucu onayladı).');
     } catch (error) {
       console.error("Pairing error:", error);
@@ -77,6 +73,7 @@ export const DataProvider = ({ children }) => {
     if (!apiClient) return;
     try {
       await apiClient.post('/Breeding/egg', { pairId, laidDate: layDate });
+      await refreshData();
       alert('Yumurta başarıyla kaydedildi.');
     } catch (error) {
       console.error("Egg error:", error);
@@ -89,7 +86,8 @@ export const DataProvider = ({ children }) => {
     if (!apiClient) return;
     try {
       await apiClient.post('/Breeding/hatch', { eggId, hatchDate });
-      alert('Yavru çıkışı kaydedildi.');
+      await refreshData();
+      alert('Yavru çıkışı başarıyla kaydedildi.');
     } catch (error) {
       console.error("Hatch error:", error);
       alert('Yavru çıkışı kaydedilirken hata oluştu.');
@@ -137,7 +135,7 @@ export const DataProvider = ({ children }) => {
   };
 
   // 5. Basit Kuş Ekleme (Dışarıdan Alım vb)
-  const addBird = async (birdData) => {
+  const addBird = async (birdData, imageFile = null) => {
     if (!apiClient) return;
     try {
       const payload = {
@@ -145,34 +143,123 @@ export const DataProvider = ({ children }) => {
         gender: parseInt(birdData.gender) || 0,
         mutation: birdData.mutation,
         birthDate: birdData.birthDate ? new Date(birdData.birthDate).toISOString() : null,
-        status: parseInt(birdData.status) || 1,
-        // photo/notes are not in BirdCreateDto yet but we'll pass what we can
+        status: birdData.status !== undefined ? parseInt(birdData.status) : 0,
+        motherId: birdData.motherId || null,
+        fatherId: birdData.fatherId || null
       };
+      
       const res = await apiClient.post('/Birds', payload);
-      setBirds(prev => [...prev, res.data]);
+      let newBird = res.data;
+
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+        const imgRes = await apiClient.post(`/Birds/${newBird.id}/image`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        newBird = { ...newBird, imageUrl: imgRes.data.imageUrl };
+      }
+
+      setBirds(prev => [...prev, newBird]);
       alert('Kuş başarıyla eklendi!');
     } catch (error) {
       console.error("Add bird error:", error);
-      alert('Kuş eklenirken hata oluştu.');
+      const errorMessage = error.response?.data?.message || typeof error.response?.data === 'string' ? error.response?.data : 'Kuş eklenirken hata oluştu.';
+      throw new Error(errorMessage);
+    }
+  };
+
+  const uploadBirdImage = async (id, imageFile) => {
+    if (!apiClient || !imageFile) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', imageFile);
+      const res = await apiClient.post(`/Birds/${id}/image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const newImageUrl = res.data.imageUrl;
+      setBirds(prev => prev.map(b => b.id === id ? { ...b, imageUrl: newImageUrl } : b));
+      return newImageUrl;
+    } catch (error) {
+      console.error("Upload image error:", error);
+      alert('Fotoğraf yüklenirken hata oluştu.');
+      throw error;
     }
   };
 
   const updateBird = async (id, updatedData) => {
-    // Backend'de henüz PUT /Birds/{id} yok, şimdilik sadece state'i güncelliyoruz
-    // İleride backend'e eklendiğinde buraya apiClient.put(...) eklenecek
-    setBirds(prev => prev.map(b => b.id === id ? { ...b, ...updatedData } : b));
+    if (!apiClient) return;
+    try {
+      const existingBird = birds.find(b => b.id === id);
+      if (!existingBird) return;
+      
+      const fullUpdateData = { ...existingBird, ...updatedData };
+      const response = await apiClient.put(`/Birds/${id}`, fullUpdateData);
+      setBirds(prev => prev.map(b => b.id === id ? response.data : b));
+    } catch (error) {
+      console.error('Kuş güncellenirken hata:', error);
+      throw error;
+    }
   };
 
-  const deleteNest = (id) => {
-    setNests(prev => prev.filter(n => n.id !== id));
+  const deleteBird = async (id) => {
+    if (!apiClient) return;
+    try {
+      await apiClient.delete(`/Birds/${id}`);
+      setBirds(prev => prev.filter(b => b.id !== id));
+      alert('Kuş başarıyla silindi.');
+    } catch (error) {
+      console.error("Delete bird error:", error);
+      alert('Kuş silinirken hata oluştu.');
+    }
   };
 
-  const updateNest = (id, updatedData) => {
-    setNests(prev => prev.map(n => n.id === id ? { ...n, ...updatedData } : n));
+  const addNest = async (nestData) => {
+    if (!apiClient) return;
+    try {
+      const response = await apiClient.post('/Nests', nestData);
+      setNests(prev => [...prev, response.data]);
+    } catch (error) {
+      console.error('Yuvalık eklenirken hata:', error);
+      throw error;
+    }
   };
 
-  const deleteEgg = (id) => {
-    setEggs(prev => prev.filter(e => e.id !== id));
+  const deleteNest = async (id) => {
+    if (!apiClient) return;
+    try {
+      await apiClient.delete(`/Nests/${id}`);
+      setNests(prev => prev.filter(n => n.id !== id));
+    } catch (error) {
+      console.error('Yuvalık silinirken hata:', error);
+      throw error;
+    }
+  };
+
+  const updateNest = async (id, updatedData) => {
+    if (!apiClient) return;
+    try {
+      const existingNest = nests.find(n => n.id === id);
+      if (!existingNest) return;
+      
+      const fullUpdateData = { ...existingNest, ...updatedData };
+      const response = await apiClient.put(`/Nests/${id}`, fullUpdateData);
+      setNests(prev => prev.map(n => n.id === id ? response.data : n));
+    } catch (error) {
+      console.error('Yuvalık güncellenirken hata:', error);
+      throw error;
+    }
+  };
+
+  const deleteEgg = async (id) => {
+    if (!apiClient) return;
+    try {
+      await apiClient.delete(`/Breeding/egg/${id}`);
+      await refreshData();
+    } catch (error) {
+      console.error('Yumurta silinirken hata:', error);
+      alert('Yumurta silinirken bir hata oluştu.');
+    }
   };
 
   const addTransaction = (data) => {
@@ -187,14 +274,50 @@ export const DataProvider = ({ children }) => {
     setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
+  const addCarePlan = async (planData) => {
+    if (!apiClient) return;
+    try {
+      const response = await apiClient.post('/CarePlans', planData);
+      setCarePlans(prev => [...prev, response.data]);
+    } catch (error) {
+      console.error('Bakım planı eklenirken hata:', error);
+      throw error;
+    }
+  };
+
+  const updateCarePlan = async (id, updatedData) => {
+    if (!apiClient) return;
+    try {
+      await apiClient.put(`/CarePlans/${id}`, updatedData);
+      setCarePlans(prev => prev.map(p => p.id === id ? { ...p, ...updatedData } : p));
+    } catch (error) {
+      console.error('Bakım planı güncellenirken hata:', error);
+      throw error;
+    }
+  };
+
+  const deleteCarePlan = async (id) => {
+    if (!apiClient) return;
+    try {
+      await apiClient.delete(`/CarePlans/${id}`);
+      setCarePlans(prev => prev.filter(p => p.id !== id));
+    } catch (error) {
+      console.error('Bakım planı silinirken hata:', error);
+      throw error;
+    }
+  };
+
   return (
     <DataContext.Provider value={{
-      birds, addBird, updateBird, setBirds,
-      nests, setNests, deleteNest, updateNest,
+      loading,
+      birds, addBird, updateBird,
+      uploadBirdImage,
+      deleteBird, setBirds,
+      nests, setNests, addNest, deleteNest, updateNest,
       sales, setSales, updateSale,
       transactions, setTransactions, addTransaction, updateTransaction, deleteTransaction,
-      carePlans, setCarePlans,
-      clutches, setClutches,
+      carePlans, setCarePlans, addCarePlan, updateCarePlan, deleteCarePlan,
+      pairs, setPairs,
       eggs, setEggs, deleteEgg,
       pairBirds, registerEgg, registerHatch, registerSale
     }}>

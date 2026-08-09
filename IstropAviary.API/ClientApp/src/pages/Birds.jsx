@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useData } from '../context/DataContext';
 import { 
   Search, Plus, MoreVertical, List, LayoutGrid, 
-  ChevronDown, RefreshCcw, ChevronLeft, ChevronRight
+  ChevronDown, RefreshCcw, ChevronLeft, ChevronRight, Trash2, Edit3, MoreHorizontal, Bird
 } from 'lucide-react';
 import BirdModal from '../components/modals/BirdModal';
 import BirdDetail from '../components/birds/BirdDetail';
@@ -61,7 +61,7 @@ const CustomDropdown = ({ icon, label, options, value, onChange }) => {
 };
 
 const Birds = () => {
-  const { birds, addBird } = useData();
+  const { birds, addBird, deleteBird, loading: dataLoading } = useData();
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -72,28 +72,38 @@ const Birds = () => {
   const [filterStatus, setFilterStatus] = useState('Tümü');
   const [filterGender, setFilterGender] = useState('Tümü');
   const [filterAviary, setFilterAviary] = useState('Tümü');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
-  if (selectedBird) {
-    return <BirdDetail bird={selectedBird} onBack={() => setSelectedBird(null)} />;
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, filterGender, filterAviary]);
+
+  const currentSelectedBird = selectedBird ? birds.find(b => b.id === selectedBird.id) || selectedBird : null;
+
+  if (currentSelectedBird) {
+    return <BirdDetail bird={currentSelectedBird} onBack={() => setSelectedBird(null)} />;
   }
 
   const filteredBirds = birds.filter(bird => {
     const searchMatch = bird.bandNumber?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                         bird.notes?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Convert bird.status and filterStatus to string for robust comparison, or map '1' to 'Damızlık'
     let statusMatch = true;
     if (filterStatus !== 'Tümü') {
       const dbStatus = String(bird.status);
       statusMatch = dbStatus === filterStatus || 
-                   (filterStatus === '1' && (dbStatus === 'Available' || dbStatus === 'Damızlık')) ||
+                   (filterStatus === '1' && (dbStatus === 'Available' || dbStatus === 'Breeder' || dbStatus === 'Damızlık')) ||
                    (filterStatus === '2' && (dbStatus === 'Chick' || dbStatus === 'Yavru')) ||
                    (filterStatus === '4' && (dbStatus === 'Sold' || dbStatus === 'Satılık'));
     }
 
     let genderMatch = true;
     if (filterGender !== 'Tümü') {
-      genderMatch = String(bird.gender) === filterGender;
+      const g = String(bird.gender);
+      genderMatch = g === filterGender || 
+                   (filterGender === '0' && (g === 'Male' || g === 'Erkek')) ||
+                   (filterGender === '1' && (g === 'Female' || g === 'Dişi'));
     }
 
     let aviaryMatch = true;
@@ -106,22 +116,29 @@ const Birds = () => {
     }
 
     return searchMatch && statusMatch && genderMatch && aviaryMatch;
+  }).sort((a, b) => {
+    const bandA = a.bandNumber || '';
+    const bandB = b.bandNumber || '';
+    return bandA.localeCompare(bandB, undefined, { numeric: true, sensitivity: 'base' });
   });
 
   const handleAddBird = async (birdData) => {
     try {
-      // API call replaced with Context state update
-      addBird(birdData);
-      // alert('Kuş eklendi!');
+      await addBird(birdData);
     } catch (error) {
       console.error("Kuş eklenirken hata oluştu:", error);
+      alert(error.message);
       throw error; 
     }
   };
 
+  const totalPages = Math.max(1, Math.ceil(filteredBirds.length / itemsPerPage));
+  const displayedBirds = filteredBirds.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   const getStatusStyle = (status) => {
     switch(status) {
       case 'Available': 
+      case 'Breeder':
       case 'Damızlık':
         return { bg: 'bg-green-100', text: 'text-green-700', dot: 'bg-green-500', label: 'Damızlık' };
       case 'Chick':
@@ -132,7 +149,9 @@ const Birds = () => {
         return { bg: 'bg-blue-100', text: 'text-blue-700', dot: 'bg-blue-500', label: 'Satılık' };
       case 'Deceased':
       case 'Tedavide':
-        return { bg: 'bg-red-100', text: 'text-red-700', dot: 'bg-red-500', label: 'Tedavide' };
+      case 'Resting':
+      case 'Dinlenmede':
+        return { bg: 'bg-red-100', text: 'text-red-700', dot: 'bg-red-500', label: 'Tedavide/Dinlenmede' };
       default: 
         return { bg: 'bg-slate-100', text: 'text-slate-700', dot: 'bg-slate-500', label: status || 'Bilinmiyor' };
     }
@@ -267,66 +286,65 @@ const Birds = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {loading ? (
+                {dataLoading ? (
                   <tr>
-                    <td colSpan="8" className="px-6 py-10 text-center text-slate-500">Yükleniyor...</td>
+                    <td colSpan="8" className="px-6 py-10 text-center text-slate-500">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        <span>Kuşlar Yükleniyor...</span>
+                      </div>
+                    </td>
                   </tr>
                 ) : filteredBirds.length === 0 ? (
                   <tr>
                     <td colSpan="8" className="px-6 py-10 text-center text-slate-500">Kriterlere uygun kuş bulunamadı.</td>
                   </tr>
                 ) : (
-                  filteredBirds.map((bird) => {
+                  displayedBirds.map((bird) => {
                     const statusInfo = getStatusStyle(bird.status);
-                    const isMale = bird.gender === 0 || bird.gender === '0';
-
+                    const isMale = bird.gender === 0 || bird.gender === '0' || bird.gender === 'Male' || bird.gender === 'Erkek';
+                    const isUnknown = bird.gender === 2 || bird.gender === '2' || bird.gender === 'Unknown' || bird.gender === 'Bilinmiyor';
                     return (
-                      <tr 
-                        key={bird.id} 
-                        className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
-                        onClick={() => setSelectedBird(bird)}
-                      >
-                        <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
-                          <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                      <tr key={bird.id} onClick={() => setSelectedBird(bird)} className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors cursor-pointer group/row">
+                        <td className="px-4 py-4 w-12 text-center">
+                          <input type="checkbox" className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" onClick={(e) => e.stopPropagation()} />
                         </td>
                         <td className="px-4 py-4">
                           <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden border border-slate-200">
                             {bird.imageUrl ? (
-                              <img src={bird.imageUrl} alt="Kuş" className="w-full h-full object-cover" />
+                              <img src={`http://localhost:5010${bird.imageUrl}`} alt="Kuş" className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">Foto</div>
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-slate-700">
-                          {bird.bandNumber}
+                        <td className="px-4 py-4 font-semibold text-slate-700">{bird.bandNumber}</td>
+                        <td className="px-4 py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold ${
+                            isUnknown ? 'text-slate-600 bg-slate-100' : 
+                            isMale ? 'text-blue-600 bg-blue-50' : 'text-pink-600 bg-pink-50'
+                          }`}>
+                            {isUnknown ? <span className="text-[10px]">?</span> : (isMale ? '♂' : '♀')} {isUnknown ? 'Bilinmiyor' : (isMale ? 'Erkek' : 'Dişi')}
+                          </span>
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className={`flex items-center gap-1.5 text-sm font-medium ${isMale ? 'text-blue-600' : 'text-pink-600'}`}>
-                            {isMale ? (
-                              <span className="text-lg leading-none">♂</span>
-                            ) : (
-                              <span className="text-lg leading-none">♀</span>
-                            )}
-                            {isMale ? 'Erkek' : 'Dişi'}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold ${statusInfo.bg} ${statusInfo.text}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot}`}></span>
+                        <td className="px-4 py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold ${statusInfo.bg} ${statusInfo.text}`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot}`}></div>
                             {statusInfo.label}
                           </span>
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600 font-medium">
-                          {bird.aviaryName || '-'}
+                        <td className="px-4 py-4 text-slate-600 font-medium">
+                          {bird.nestCode || (bird.aviaryName || '-')}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-500 max-w-[200px] truncate">
+                        <td className="px-4 py-4 text-slate-600 text-sm max-w-xs truncate" title={bird.notes}>
                           {bird.notes || '-'}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-right">
-                          <button className="text-slate-400 hover:text-blue-600 transition-colors p-1.5 rounded-md hover:bg-blue-50 opacity-0 group-hover:opacity-100">
-                            <MoreVertical size={18} />
-                          </button>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-1 justify-end opacity-0 group-hover/row:opacity-100 transition-opacity">
+                            <button onClick={(e) => { e.stopPropagation(); if(window.confirm('Bu kuşu silmek istediğinize emin misiniz?')) deleteBird(bird.id); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -337,29 +355,61 @@ const Birds = () => {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {filteredBirds.map(bird => {
+        dataLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {[1,2,3,4,5].map(i => (
+              <div key={i} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 animate-pulse">
+                <div className="w-full aspect-square bg-slate-100 rounded-xl mb-4"></div>
+                <div className="h-5 bg-slate-100 rounded-md w-2/3 mb-2"></div>
+                <div className="h-4 bg-slate-100 rounded-md w-1/2 mb-4"></div>
+                <div className="flex gap-2">
+                  <div className="h-6 bg-slate-100 rounded-md w-16"></div>
+                  <div className="h-6 bg-slate-100 rounded-md w-16"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredBirds.length === 0 ? (
+          <div className="flex items-center justify-center py-20 text-slate-500 font-medium w-full bg-white rounded-2xl shadow-sm border border-slate-100">
+            Kriterlere uygun kuş bulunamadı.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {displayedBirds.map(bird => {
             const statusInfo = getStatusStyle(bird.status);
-            const isMale = bird.gender === 0 || bird.gender === '0';
+            const isMale = bird.gender === 0 || bird.gender === '0' || bird.gender === 'Male' || bird.gender === 'Erkek';
+            const isUnknown = bird.gender === 2 || bird.gender === '2' || bird.gender === 'Unknown' || bird.gender === 'Bilinmiyor';
             return (
               <div 
                 key={bird.id}
                 onClick={() => setSelectedBird(bird)}
                 className="bg-white p-4 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer border border-slate-100"
               >
-                <div className="w-full aspect-square bg-slate-100 rounded-xl mb-4 overflow-hidden">
+                <div className="w-full aspect-square bg-slate-100 rounded-xl mb-4 overflow-hidden relative group/image">
                   {bird.imageUrl ? (
-                    <img src={bird.imageUrl} alt="Kuş" className="w-full h-full object-cover" />
+                    <img src={`http://localhost:5010${bird.imageUrl}`} alt="Kuş" className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-slate-300">
                       Fotoğraf Yok
                     </div>
                   )}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if(window.confirm('Bu kuşu silmek istediğinize emin misiniz?')) {
+                        deleteBird(bird.id);
+                      }
+                    }}
+                    title="Kuşu Sil"
+                    className="absolute top-2 right-2 bg-white/90 backdrop-blur text-slate-400 hover:text-red-600 transition-colors p-1.5 rounded-md hover:bg-red-50 opacity-0 group-hover/image:opacity-100 shadow-sm"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
                 <h3 className="font-bold text-slate-800 text-lg mb-1">{bird.bandNumber}</h3>
                 <div className="flex justify-between items-center mb-3">
-                  <span className={`text-sm font-semibold ${isMale ? 'text-blue-500' : 'text-pink-500'}`}>
-                    {isMale ? '♂ Erkek' : '♀ Dişi'}
+                  <span className={`text-sm font-semibold ${isUnknown ? 'text-slate-500' : isMale ? 'text-blue-500' : 'text-pink-500'}`}>
+                    {isUnknown ? '? Bilinmiyor' : isMale ? '♂ Erkek' : '♀ Dişi'}
                   </span>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${statusInfo.bg} ${statusInfo.text}`}>
                     {statusInfo.label}
@@ -371,7 +421,8 @@ const Birds = () => {
               </div>
             );
           })}
-        </div>
+          </div>
+        )
       )}
         
         {/* Pagination Footer */}
@@ -383,27 +434,61 @@ const Birds = () => {
             
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="flex gap-1">
-                <button className="w-8 h-8 flex items-center justify-center rounded-md border border-slate-200 text-slate-400 hover:bg-slate-50" disabled>
+                <button 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="w-8 h-8 flex items-center justify-center rounded-md border border-slate-200 text-slate-400 hover:bg-slate-50 disabled:opacity-50"
+                >
                   <ChevronLeft size={16} />
                 </button>
-                <button className="w-8 h-8 flex items-center justify-center rounded-md border border-blue-600 bg-blue-50 text-blue-600 font-semibold text-sm">
-                  1
-                </button>
-                <button className="w-8 h-8 flex items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold text-sm">
-                  2
-                </button>
-                <button className="w-8 h-8 flex items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold text-sm">
-                  3
-                </button>
-                <button className="w-8 h-8 flex items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50">
+                {Array.from({ length: totalPages }).map((_, idx) => {
+                  const page = idx + 1;
+                  // Basit sayfalama (Çok sayfa varsa ortayı gizle)
+                  if (totalPages > 7) {
+                    if (page !== 1 && page !== totalPages && Math.abs(page - currentPage) > 1) {
+                      if (page === currentPage - 2 || page === currentPage + 2) {
+                        return <span key={page} className="w-8 h-8 flex items-center justify-center text-slate-400">...</span>;
+                      }
+                      return null;
+                    }
+                  }
+                  
+                  return (
+                    <button 
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-md border text-sm font-semibold transition-colors ${
+                        currentPage === page 
+                          ? 'border-blue-600 bg-blue-50 text-blue-600' 
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+                <button 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="w-8 h-8 flex items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                >
                   <ChevronRight size={16} />
                 </button>
               </div>
 
-              <div className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 cursor-pointer hover:bg-slate-50">
-                25 / sayfa
-                <ChevronDown size={14} className="text-slate-400" />
-              </div>
+              <select 
+                value={itemsPerPage} 
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 cursor-pointer hover:bg-slate-50 focus:outline-none focus:ring-2 focus:border-blue-500 transition-colors"
+              >
+                <option value={10}>10 / sayfa</option>
+                <option value={25}>25 / sayfa</option>
+                <option value={50}>50 / sayfa</option>
+                <option value={100}>100 / sayfa</option>
+              </select>
             </div>
           </div>
         )}
@@ -411,7 +496,7 @@ const Birds = () => {
       <BirdModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSave={handleAddBird}
+        onSave={addBird}
         birdsList={birds}
       />
     </div>

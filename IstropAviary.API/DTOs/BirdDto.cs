@@ -12,6 +12,14 @@ public class BirdDto
     public DateTime? BirthDate { get; set; }
     public string Status { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
+    public string? Notes { get; set; }
+
+    // Physical Traits
+    public string? RingColor { get; set; }
+    public string? BeakColor { get; set; }
+    public string? EyeColor { get; set; }
+    public string? FeatherCondition { get; set; }
+    public string? HealthStatus { get; set; }
 
     public int? AviaryId { get; set; }
     public string? AviaryName { get; set; }
@@ -34,6 +42,14 @@ public class BirdCreateDto
     public string? Mutation { get; set; }
     public DateTime? BirthDate { get; set; }
     public BirdStatus Status { get; set; } = BirdStatus.Breeder;
+    public string? Notes { get; set; }
+    
+    // Physical Traits
+    public string? RingColor { get; set; }
+    public string? BeakColor { get; set; }
+    public string? EyeColor { get; set; }
+    public string? FeatherCondition { get; set; }
+    public string? HealthStatus { get; set; }
     
     public int? AviaryId { get; set; }
     public int? NestId { get; set; }

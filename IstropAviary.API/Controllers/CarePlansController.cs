@@ -27,8 +27,6 @@ public class CarePlansController : ControllerBase
     {
         var plans = await _context.CarePlans
             .AsNoTracking()
-            .Include(cp => cp.RelatedBird)
-            .Include(cp => cp.RelatedNest)
             .ToListAsync();
 
         return Ok(_mapper.Map<IEnumerable<CarePlanDto>>(plans));
@@ -42,5 +40,29 @@ public class CarePlansController : ControllerBase
         await _context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetCarePlans), new { id = plan.Id }, _mapper.Map<CarePlanDto>(plan));
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateCarePlan(int id, CarePlanCreateDto dto)
+    {
+        var plan = await _context.CarePlans.FindAsync(id);
+        if (plan == null) return NotFound();
+
+        _mapper.Map(dto, plan);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteCarePlan(int id)
+    {
+        var plan = await _context.CarePlans.FindAsync(id);
+        if (plan == null) return NotFound();
+
+        _context.CarePlans.Remove(plan);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 }
