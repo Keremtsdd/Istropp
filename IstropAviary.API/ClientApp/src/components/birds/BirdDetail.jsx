@@ -89,9 +89,14 @@ const BirdDetail = ({ bird, onBack }) => {
   // Notes Edit Logic
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [tempNotes, setTempNotes] = useState(bird.notes || '');
-  const handleSaveNotes = () => {
-    updateBird(bird.id, { notes: tempNotes });
-    setIsEditingNotes(false);
+  const handleSaveNotes = async () => {
+    try {
+      await updateBird(bird.id, { notes: tempNotes });
+      setIsEditingNotes(false);
+    } catch (error) {
+      console.error("Not kaydedilirken hata:", error);
+      alert("Not kaydedilirken bir hata oluştu.");
+    }
   };
 
   return (

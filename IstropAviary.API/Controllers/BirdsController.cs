@@ -103,7 +103,7 @@ public class BirdsController : ControllerBase
         bird.Notes = birdDto.Notes;
 
         await _context.SaveChangesAsync();
-        return Ok(bird);
+        return Ok(_mapper.Map<BirdDto>(bird));
     }
 
     [HttpDelete("{id}")]
