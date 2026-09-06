@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Building, Fingerprint, Calendar as CalendarIcon, 
   Printer, Bell, Image as ImageIcon, Save, Search,
@@ -8,6 +8,12 @@ import api from '../api/axiosClient';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('genel');
+  const fileInputRef = useRef(null);
+
+  const [companyName, setCompanyName] = useState('ISTROP AVIARY');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [logoFile, setLogoFile] = useState(null);
+
 
   // Bildirim tab toggle states
   const [notifEggCheck, setNotifEggCheck] = useState(true);
@@ -36,6 +42,8 @@ const Settings = () => {
     try {
       const response = await api.get('/settings');
       if (response.data) {
+        setCompanyName(response.data.CompanyName || 'ISTROP AVIARY');
+        setLogoUrl(response.data.CompanyLogo || '');
         setAutomationSettings({
           HatchDurationDays: parseInt(response.data.HatchDurationDays || 21),
           CandlingDays: parseInt(response.data.CandlingDays || 7),
@@ -45,6 +53,34 @@ const Settings = () => {
       }
     } catch (error) {
       console.error('Ayarlar yüklenemedi:', error);
+    }
+  };
+
+  const handleLogoChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setLogoFile(e.target.files[0]);
+    }
+  };
+
+  const saveGeneralSettings = async () => {
+    try {
+      if (logoFile) {
+        const formData = new FormData();
+        formData.append('file', logoFile);
+        const logoRes = await api.post('/settings/logo', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        if (logoRes.data && logoRes.data.ImageUrl) {
+          setLogoUrl(logoRes.data.ImageUrl);
+          setLogoFile(null);
+        }
+      }
+
+      await api.post('/settings', { CompanyName: companyName });
+      alert('Genel bilgiler kaydedildi!');
+    } catch (error) {
+      console.error('Ayarlar kaydedilemedi:', error);
+      alert('Kaydetme hatası!');
     }
   };
 
@@ -126,16 +162,32 @@ const Settings = () => {
                 {/* Logo Section */}
                 <div className="flex flex-col items-center">
                   <p className="text-sm font-semibold text-slate-700 mb-4 self-start">Logo</p>
-                  <div className="w-40 h-40 rounded-full bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 mb-4 overflow-hidden relative group cursor-pointer">
-                     <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div 
+                    className="w-40 h-40 rounded-full bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 mb-4 overflow-hidden relative group cursor-pointer"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                     <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
                         <ImageIcon size={24} className="text-white mb-2" />
                         <span className="text-white text-xs font-medium">Değiştir</span>
                      </div>
-                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-green-100">
-                        <BirdIconMock />
+                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-green-100 relative">
+                        {logoFile ? (
+                          <img src={URL.createObjectURL(logoFile)} alt="Yeni Logo" className="w-full h-full object-cover" />
+                        ) : logoUrl ? (
+                          <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                        ) : (
+                          <BirdIconMock />
+                        )}
                      </div>
                   </div>
-                  <button className="flex items-center gap-2 px-4 py-2 border border-blue-200 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    ref={fileInputRef} 
+                    onChange={handleLogoChange} 
+                    className="hidden" 
+                  />
+                  <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-4 py-2 border border-blue-200 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors">
                     <ImageIcon size={16} /> Logo Değiştir
                   </button>
                 </div>
@@ -143,10 +195,10 @@ const Settings = () => {
                 <div className="flex-1 space-y-5 max-w-2xl">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">İşletme Adı</label>
-                    <input type="text" defaultValue="ISTROP AVIARY" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors font-medium"/>
+                    <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors font-medium"/>
                   </div>
                   <div className="flex justify-end pt-4">
-                    <button className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm">
+                    <button onClick={saveGeneralSettings} className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm">
                       <Save size={18} /> Kaydet
                     </button>
                   </div>
