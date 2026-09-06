@@ -224,8 +224,8 @@ const Sales = () => {
           <div className="mb-8 flex-1">
             <h4 className="text-blue-600 font-bold mb-4 text-sm">Satılan Kuşlar</h4>
             <div className="border border-slate-100 rounded-xl overflow-hidden">
-            <div className="overflow-x-auto w-full">
-              <table className="w-full text-left border-collapse min-w-[800px]">
+              <div className="overflow-x-auto w-full">
+                <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead className="bg-slate-50/50 text-slate-500 text-xs">
                   <tr>
                     <th className="p-3 text-left font-medium rounded-l-xl">Kuş No</th>
@@ -272,6 +272,7 @@ const Sales = () => {
                   </tr>
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
 
