@@ -145,24 +145,6 @@ const Settings = () => {
                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">İşletme Adı</label>
                     <input type="text" defaultValue="ISTROP AVIARY" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors font-medium"/>
                   </div>
-                  <div className="grid grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Şehir</label>
-                      <input type="text" defaultValue="İstanbul" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors font-medium"/>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Telefon</label>
-                      <input type="text" defaultValue="+90 532 123 45 67" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors font-medium"/>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Web Sitesi</label>
-                    <input type="text" defaultValue="www.istropaviary.com" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors font-medium"/>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Açıklama</label>
-                    <textarea rows={3} defaultValue="Cennet Papağanı, Sultan Papağanı ve Muhabbet Kuşu üretim ve satış işletmesi." className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors font-medium resize-none"></textarea>
-                  </div>
                   <div className="flex justify-end pt-4">
                     <button className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm">
                       <Save size={18} /> Kaydet
