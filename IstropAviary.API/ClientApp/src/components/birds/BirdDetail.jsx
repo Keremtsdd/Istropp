@@ -10,14 +10,37 @@ import PedigreeTree from './PedigreeTree';
 import { GitMerge } from 'lucide-react';
 
 const BirdDetail = ({ bird, onBack }) => {
-  const { birds, updateBird, uploadBirdImage } = useData();
+  const { birds, updateBird, uploadBirdImage, pairs, nests, eggs, sales } = useData();
 
   // Find parents
   const father = birds.find(b => b.id === bird.fatherId);
   const mother = birds.find(b => b.id === bird.motherId);
 
+  // Derived properties
+  let derivedStatus = bird.status;
+  const saleInfo = sales?.find(s => s.saleDetails?.some(sd => sd.birdId === bird.id));
+  if (saleInfo && saleInfo.paymentType === 'Beklemede') {
+    derivedStatus = 'Pending';
+  }
+
+  const activePair = pairs?.find(p => (p.maleId === bird.id || p.femaleId === bird.id) && p.isActive);
+  let derivedNestCode = bird.nestCode || '';
+  let placementDate = '-';
+  if (activePair) {
+    const nest = nests?.find(n => n.id === activePair.nestId);
+    if (nest) derivedNestCode = nest.nestCode;
+    placementDate = activePair.startDate ? new Date(activePair.startDate).toLocaleDateString('tr-TR') : '-';
+  }
+
+  const birdPairs = pairs?.filter(p => p.maleId === bird.id || p.femaleId === bird.id) || [];
+  const birdPairIds = birdPairs.map(p => p.id);
+  const birdEggs = eggs?.filter(e => birdPairIds.includes(e.pairId)) || [];
+  const totalEggs = birdEggs.length;
+  const hatchedChicks = birdEggs.filter(e => String(e.status) === 'Hatched' || String(e.status) === '3').length;
+
   const getStatusColor = (status) => {
     const s = String(status).toLowerCase();
+    if (s === 'pending') return 'bg-purple-100 text-purple-700';
     if (s === '0' || s === 'breeder') return 'bg-emerald-100 text-emerald-700';
     if (s === '1' || s === 'chick') return 'bg-amber-100 text-amber-700';
     if (s === '2' || s === 'forsale') return 'bg-blue-100 text-blue-700';
@@ -29,6 +52,7 @@ const BirdDetail = ({ bird, onBack }) => {
 
   const statusText = (status) => {
     const s = String(status).toLowerCase();
+    if (s === 'pending') return 'Beklemede (Kapora)';
     if (s === '0' || s === 'breeder') return 'Damızlık';
     if (s === '1' || s === 'chick') return 'Yavru';
     if (s === '2' || s === 'forsale') return 'Satılık';
@@ -153,7 +177,7 @@ const BirdDetail = ({ bird, onBack }) => {
               </div>
               <div className="flex items-center gap-3 text-slate-600 text-sm font-medium">
                 <div className="w-5 flex justify-center"><Home size={16} /></div>
-                <span>Yuvalık: {bird.aviaryName || '-'}</span>
+                <span>Yuvalık: {derivedNestCode || (bird.aviaryName || '-')}</span>
               </div>
             </div>
 
@@ -204,14 +228,14 @@ const BirdDetail = ({ bird, onBack }) => {
                   </div>
                   <div className="flex justify-between border-b border-slate-50 pb-3">
                     <span className="text-slate-500 text-sm">Durum</span>
-                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${getStatusColor(bird.status)}`}>
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${getStatusColor(derivedStatus)}`}>
                       <span className="w-1.5 h-1.5 inline-block rounded-full bg-current mr-1"></span>
-                      {statusText(bird.status)}
+                      {statusText(derivedStatus)}
                     </span>
                   </div>
                   <div className="flex justify-between border-b border-slate-50 pb-3">
                     <span className="text-slate-500 text-sm">Yuvalık</span>
-                    <span className="font-semibold text-slate-800">{bird.aviaryName || '-'}</span>
+                    <span className="font-semibold text-slate-800">{derivedNestCode || (bird.aviaryName || '-')}</span>
                   </div>
                   <div className="flex justify-between border-b border-slate-50 pb-3">
                     <span className="text-slate-500 text-sm">Anne</span>
@@ -241,22 +265,22 @@ const BirdDetail = ({ bird, onBack }) => {
                   <div className="border border-slate-100 rounded-xl p-3 flex flex-col items-center justify-center text-center">
                     <Home size={20} className="text-slate-400 mb-1" />
                     <span className="text-xs text-slate-500">Yuvalık</span>
-                    <span className="font-bold text-slate-800">{bird.aviaryName || '-'}</span>
+                    <span className="font-bold text-slate-800">{derivedNestCode || (bird.aviaryName || '-')}</span>
                   </div>
                   <div className="border border-slate-100 rounded-xl p-3 flex flex-col items-center justify-center text-center">
                     <CalendarDays size={20} className="text-slate-400 mb-1" />
                     <span className="text-xs text-slate-500">Yerleştirme</span>
-                    <span className="font-bold text-slate-800">-</span>
+                    <span className="font-bold text-slate-800">{placementDate}</span>
                   </div>
                   <div className="border border-slate-100 rounded-xl p-3 flex flex-col items-center justify-center text-center">
                     <Egg size={20} className="text-slate-400 mb-1" />
                     <span className="text-xs text-slate-500">Toplam Yumurta</span>
-                    <span className="font-bold text-slate-800">-</span>
+                    <span className="font-bold text-slate-800">{totalEggs > 0 ? totalEggs : '-'}</span>
                   </div>
                   <div className="border border-slate-100 rounded-xl p-3 flex flex-col items-center justify-center text-center">
                     <div className="text-lg leading-none mb-1 text-slate-400">🐥</div>
                     <span className="text-xs text-slate-500">Çıkan Yavru</span>
-                    <span className="font-bold text-slate-800">-</span>
+                    <span className="font-bold text-slate-800">{hatchedChicks > 0 ? hatchedChicks : '-'}</span>
                   </div>
                 </div>
               </div>
