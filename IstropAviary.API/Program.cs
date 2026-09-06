@@ -57,19 +57,21 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowVite",
         builder => builder
-            .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174")
+            .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174", "https://istropp.vercel.app")
             .AllowAnyMethod()
-            .AllowAnyHeader());
+            .AllowAnyHeader()
+            .SetIsOriginAllowed(origin => true)); // For broader testing if needed, or stick to explicit origins
 });
 
 var app = builder.Build();
+
+app.UseCors("AllowVite");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     // app.UseSwagger();
     // app.UseSwaggerUI();
-    app.UseCors("AllowVite");
 }
 
 app.UseHttpsRedirection();
