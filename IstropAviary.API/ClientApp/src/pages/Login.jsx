@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Bird, Lock, User } from 'lucide-react';
 
 const Login = () => {
-  const [username, setUsername] = useState('emirhanmanavoglu5090');
-  const [password, setPassword] = useState('lsqb8vag5');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
