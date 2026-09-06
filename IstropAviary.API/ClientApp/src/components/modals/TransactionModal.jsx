@@ -73,7 +73,7 @@ const TransactionModal = ({ isOpen, onClose, onSave, initialData = null }) => {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tarih *</label>
-                <input 
+                <input autoComplete="off" 
                   required type="date" name="date" value={formData.date} onChange={handleChange}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-[42px]"
                 />
@@ -104,7 +104,7 @@ const TransactionModal = ({ isOpen, onClose, onSave, initialData = null }) => {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Açıklama *</label>
-                <input 
+                <input autoComplete="off" 
                   required type="text" name="description" value={formData.description} onChange={handleChange} placeholder="Örn: Yem Alımı"
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-[42px]"
                 />
@@ -113,7 +113,7 @@ const TransactionModal = ({ isOpen, onClose, onSave, initialData = null }) => {
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tutar (₺) *</label>
-              <input 
+              <input autoComplete="off" 
                 required type="number" name="amount" value={formData.amount} onChange={handleChange} placeholder="0"
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
               />

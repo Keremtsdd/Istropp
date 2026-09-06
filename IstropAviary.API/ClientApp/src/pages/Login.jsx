@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Bird, Lock, User } from 'lucide-react';
 
 const Login = () => {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  const [username, setUsername] = useState('emirhanmanavoglu5090');
+  const [password, setPassword] = useState('lsqb8vag5');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -57,7 +57,7 @@ const Login = () => {
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <User className="h-5 w-5 text-slate-400" />
               </div>
-              <input
+              <input autoComplete="off"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -74,7 +74,7 @@ const Login = () => {
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-slate-400" />
               </div>
-              <input
+              <input autoComplete="off"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

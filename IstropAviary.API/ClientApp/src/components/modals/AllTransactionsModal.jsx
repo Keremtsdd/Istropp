@@ -47,7 +47,7 @@ const AllTransactionsModal = ({ isOpen, onClose, transactions, onEdit, onDelete 
         <div className="p-4 border-b border-slate-100 flex gap-4 bg-white shrink-0">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
+            <input autoComplete="off" 
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

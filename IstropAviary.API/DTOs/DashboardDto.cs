@@ -16,6 +16,7 @@ public class DashboardDto
 
 public class DashboardAlertDto
 {
+    public int Id { get; set; }
     public string Type { get; set; } = string.Empty; // "Hatch", "Care", "Stock"
     public string Message { get; set; } = string.Empty;
     public string Severity { get; set; } = "Info"; // "Critical", "Warning", "Info"

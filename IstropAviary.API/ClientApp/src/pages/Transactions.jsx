@@ -75,7 +75,14 @@ const Transactions = () => {
 
   const categoryTotals = baseCategories.map(cat => {
     const total = currentMonthExpenses
-      .filter(t => (t.category || 'Diğer') === cat.name)
+      .filter(t => {
+        const catName = t.category || 'Diğer';
+        if (cat.name === 'Diğer') {
+          const isKnown = baseCategories.some(b => b.name !== 'Diğer' && b.name === catName);
+          return !isKnown;
+        }
+        return catName === cat.name;
+      })
       .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
     const percent = totalMonthlyExpense > 0 ? (total / totalMonthlyExpense) * 100 : 0;
     return { ...cat, total, percent };
@@ -84,14 +91,10 @@ const Transactions = () => {
   const formatMoney = (val) => new Intl.NumberFormat('tr-TR').format(val || 0) + ' ₺';
 
   const handleSaveTransaction = (data) => {
-    const payload = {
-      ...data,
-      type: data.type === 'Gelir' ? 0 : 1
-    };
     if (editingTransaction) {
-      updateTransaction(editingTransaction.id, payload);
+      updateTransaction(editingTransaction.id, data);
     } else {
-      addTransaction(payload);
+      addTransaction(data);
     }
   };
 
@@ -176,7 +179,7 @@ const Transactions = () => {
                   value={dateFilter}
                   onChange={setDateFilter}
                   options={[
-                    { value: 'Tümü', label: 'Zaman Seç' },
+                    { value: 'Tümü', label: 'Tümü' },
                     { value: 'Son 1 Hafta', label: 'Son 1 Hafta' },
                     { value: 'Son 1 Ay', label: 'Son 1 Ay' },
                     { value: 'Son 3 Ay', label: 'Son 3 Ay' }

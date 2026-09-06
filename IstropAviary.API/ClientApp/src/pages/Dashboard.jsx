@@ -166,30 +166,46 @@ const Dashboard = () => {
             ) : (
               <div className="space-y-2">
                 {data.todayTasks.map((task, i) => (
-                  <div key={i} className={`p-4 rounded-2xl border flex items-start gap-4 transition-colors cursor-pointer ${
+                  <div key={i} className={`p-4 rounded-2xl border flex items-start justify-between gap-4 transition-colors ${
                       task.severity === 'Critical' ? 'bg-red-50/50 border-red-100 hover:bg-red-50' :
                       task.severity === 'Warning' ? 'bg-orange-50/50 border-orange-100 hover:bg-orange-50' :
                       'bg-blue-50/50 border-blue-100 hover:bg-blue-50'
                   }`}>
-                    <div className={`mt-1 shrink-0 ${
-                        task.severity === 'Critical' ? 'text-red-500' :
-                        task.severity === 'Warning' ? 'text-orange-500' :
-                        'text-blue-500'
-                    }`}>
-                      {task.type === 'Hatch' ? <Egg size={20} /> : task.type === 'Care' ? <Droplet size={20} /> : <AlertCircle size={20} />}
+                    <div className="flex gap-4 items-start">
+                      <div className={`mt-1 shrink-0 ${
+                          task.severity === 'Critical' ? 'text-red-500' :
+                          task.severity === 'Warning' ? 'text-orange-500' :
+                          'text-blue-500'
+                      }`}>
+                        {task.type === 'Hatching' ? <Egg size={20} /> : task.type === 'Candling' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+                      </div>
+                      <div>
+                        <h4 className={`font-bold text-sm mb-0.5 ${
+                          task.severity === 'Critical' ? 'text-red-800' :
+                          task.severity === 'Warning' ? 'text-orange-800' :
+                          'text-blue-800'
+                        }`}>{task.message}</h4>
+                        <p className={`text-xs ${
+                          task.severity === 'Critical' ? 'text-red-600/80' :
+                          task.severity === 'Warning' ? 'text-orange-600/80' :
+                          'text-blue-600/80'
+                        }`}>{new Date(task.date).toLocaleDateString('tr-TR')}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className={`font-bold text-sm mb-0.5 ${
-                        task.severity === 'Critical' ? 'text-red-800' :
-                        task.severity === 'Warning' ? 'text-orange-800' :
-                        'text-blue-800'
-                      }`}>{task.message}</h4>
-                      <p className={`text-xs ${
-                        task.severity === 'Critical' ? 'text-red-600/80' :
-                        task.severity === 'Warning' ? 'text-orange-600/80' :
-                        'text-blue-600/80'
-                      }`}>{new Date(task.date).toLocaleDateString('tr-TR')}</p>
-                    </div>
+                    <button 
+                      onClick={async () => {
+                        try {
+                          await axiosClient.post(`/tasks/${task.id}/complete`);
+                          const res = await axiosClient.get('/dashboard');
+                          setData(res.data);
+                        } catch (e) {
+                          console.error("Görevi tamamlama hatası:", e);
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-green-600 transition-colors shrink-0"
+                    >
+                      Tamamla
+                    </button>
                   </div>
                 ))}
               </div>

@@ -154,7 +154,7 @@ const Nests = () => {
 
         <div className="relative w-full max-w-xl">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input 
+          <input autoComplete="off" 
             type="text" 
             placeholder="Yuvalık ara... (N01, N02, bilezik no vb.)" 
             value={searchTerm}

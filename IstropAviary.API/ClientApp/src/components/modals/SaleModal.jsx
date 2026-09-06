@@ -194,7 +194,7 @@ const SaleModal = ({ isOpen, onClose, onSave, birds, initialData = null }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Alıcı Adı *</label>
-                <input 
+                <input autoComplete="off" 
                   required type="text" name="buyerName" value={formData.buyerName} onChange={handleChange}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
                 />
@@ -202,7 +202,7 @@ const SaleModal = ({ isOpen, onClose, onSave, birds, initialData = null }) => {
               
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Telefon Numarası</label>
-                <input 
+                <input autoComplete="off" 
                   type="tel" name="buyerPhone" value={formData.buyerPhone} onChange={handleChange}
                   placeholder="05XX XXX XX XX"
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
@@ -233,14 +233,14 @@ const SaleModal = ({ isOpen, onClose, onSave, birds, initialData = null }) => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Fiyat (₺) *</label>
-                <input 
+                <input autoComplete="off" 
                   required type="number" name="price" value={formData.price} onChange={handleChange}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
                 />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tarih *</label>
-                <input 
+                <input autoComplete="off" 
                   required type="date" name="date" value={formData.date} onChange={handleChange}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
                 />

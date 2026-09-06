@@ -312,7 +312,7 @@ const Birds = () => {
                         <td className="px-4 py-4">
                           <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden border border-slate-200">
                             {bird.imageUrl ? (
-                              <img src={`http://localhost:5010${bird.imageUrl}`} alt="Kuş" className="w-full h-full object-cover" />
+                              <img src={bird.imageUrl.startsWith("http") ? bird.imageUrl : `http://localhost:5010${bird.imageUrl}`} alt="Kuş" className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">Foto</div>
                             )}
@@ -387,7 +387,7 @@ const Birds = () => {
               >
                 <div className="w-full aspect-square bg-slate-100 rounded-xl mb-4 overflow-hidden relative group/image">
                   {bird.imageUrl ? (
-                    <img src={`http://localhost:5010${bird.imageUrl}`} alt="Kuş" className="w-full h-full object-cover" />
+                    <img src={bird.imageUrl.startsWith("http") ? bird.imageUrl : `http://localhost:5010${bird.imageUrl}`} alt="Kuş" className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-slate-300">
                       Fotoğraf Yok

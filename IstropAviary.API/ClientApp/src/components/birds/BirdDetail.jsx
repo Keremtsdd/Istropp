@@ -99,7 +99,7 @@ const BirdDetail = ({ bird, onBack }) => {
           <div className="relative aspect-square bg-slate-100">
             {/* Kuş Resmi Placeholder veya Gerçek Resim */}
             <img 
-              src={bird.imageUrl ? `http://localhost:5010${bird.imageUrl}` : `https://ui-avatars.com/api/?name=${bird.bandNumber}&background=f1f5f9&color=94a3b8&size=512&font-size=0.15`}
+              src={bird.imageUrl ? (bird.imageUrl.startsWith("http") ? bird.imageUrl : `http://localhost:5010${bird.imageUrl}`) : `https://ui-avatars.com/api/?name=${bird.bandNumber}&background=f1f5f9&color=94a3b8&size=512&font-size=0.15`}
               alt={bird.bandNumber}
               className="w-full h-full object-cover"
             />

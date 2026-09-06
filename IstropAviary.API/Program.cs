@@ -25,7 +25,7 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 // Automation Services
 builder.Services.AddScoped<ISystemSettingService, SystemSettingService>();
 builder.Services.AddScoped<IBreedingAutomationService, BreedingAutomationService>();
-// builder.Services.AddScoped<ISalesAutomationService, SalesAutomationService>();
+builder.Services.AddScoped<IImageService, CloudinaryService>();
 
 // JWT Authentication
 var key = System.Text.Encoding.ASCII.GetBytes("SuperSecretKey123!_NeedsToBeLongEnough");

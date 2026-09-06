@@ -48,23 +48,19 @@ public class DashboardController : ControllerBase
             
         var today = DateTime.UtcNow.Date;
 
-        var upcomingHatches = await _context.Clutches
-            .Include(c => c.Nest)
-            .Where(c => c.Status == EggStatus.Incubating && c.HatchDate.HasValue && c.HatchDate.Value.Date >= today && c.HatchDate.Value.Date <= today.AddDays(2))
+        var systemTasks = await _context.SystemTasks
+            .Where(t => !t.IsCompleted)
+            .OrderBy(t => t.DueDate)
             .ToListAsync();
 
-        var alerts = new List<DashboardAlertDto>();
-
-        foreach(var hatch in upcomingHatches)
+        var alerts = systemTasks.Select(t => new DashboardAlertDto
         {
-            var daysLeft = (hatch.HatchDate!.Value.Date - today).Days;
-            alerts.Add(new DashboardAlertDto {
-                Type = "Hatch",
-                Message = daysLeft == 0 ? $"{hatch.Nest?.NestCode} nolu yuvada kuluçka çıkımı bugün!" : $"{hatch.Nest?.NestCode} nolu yuvada kuluçka çıkımına {daysLeft} gün kaldı.",
-                Severity = daysLeft == 0 ? "Critical" : "Warning",
-                Date = hatch.HatchDate.Value
-            });
-        }
+            Id = t.Id,
+            Type = t.TaskType.ToString(),
+            Message = t.Message,
+            Severity = t.DueDate.Date < today ? "Critical" : (t.DueDate.Date == today ? "Warning" : "Info"),
+            Date = t.DueDate
+        }).ToList();
 
         return Ok(new DashboardDto
         {

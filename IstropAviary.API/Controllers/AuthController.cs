@@ -12,8 +12,8 @@ namespace IstropAviary.API.Controllers;
 public class AuthController : ControllerBase
 {
     // Hardcoded for demo/single-user setup. In real world, use DB and Hash.
-    private const string AdminUser = "admin";
-    private const string AdminPass = "admin123";
+    private const string AdminUser = "emirhanmanavoglu5090";
+    private const string AdminPass = "lsqb8vag5";
 
     [HttpPost("login")]
     public IActionResult Login([FromBody] LoginDto login)

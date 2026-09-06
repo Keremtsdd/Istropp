@@ -5,6 +5,7 @@ using IstropAviary.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using IstropAviary.API.Services;
 
 namespace IstropAviary.API.Controllers;
 
@@ -16,12 +17,14 @@ public class BirdsController : ControllerBase
     private readonly AppDbContext _context;
     private readonly IMapper _mapper;
     private readonly IWebHostEnvironment _env;
+    private readonly IImageService _imageService;
 
-    public BirdsController(AppDbContext context, IMapper mapper, IWebHostEnvironment env)
+    public BirdsController(AppDbContext context, IMapper mapper, IWebHostEnvironment env, IImageService imageService)
     {
         _context = context;
         _mapper = mapper;
         _env = env;
+        _imageService = imageService;
     }
 
     [HttpGet]
@@ -136,12 +139,7 @@ public class BirdsController : ControllerBase
         if (bird == null)
             return NotFound("Kuş bulunamadı.");
 
-        // Create the directory if it doesn't exist
-        var uploadsFolder = Path.Combine(_env.WebRootPath, "images", "birds");
-        if (!Directory.Exists(uploadsFolder))
-            Directory.CreateDirectory(uploadsFolder);
-
-        // Limit size to 5MB (optional, since user approved I will add a 5MB check just in case)
+        // Limit size to 5MB
         if (file.Length > 5 * 1024 * 1024)
             return BadRequest("Dosya boyutu 5 MB'dan küçük olmalıdır.");
 
@@ -150,27 +148,22 @@ public class BirdsController : ControllerBase
         if (!allowedExtensions.Contains(extension))
             return BadRequest("Sadece .jpg, .jpeg, .png ve .webp formatları desteklenmektedir.");
 
-        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
-        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
+        try
         {
-            await file.CopyToAsync(stream);
-        }
-
-        // Delete old image if exists
-        if (!string.IsNullOrEmpty(bird.ImageUrl))
-        {
-            var oldPath = Path.Combine(_env.WebRootPath, bird.ImageUrl.TrimStart('/'));
-            if (System.IO.File.Exists(oldPath))
+            var imageUrl = await _imageService.UploadImageAsync(file, "birds");
+            if (string.IsNullOrEmpty(imageUrl))
             {
-                System.IO.File.Delete(oldPath);
+                return BadRequest("Resim yüklenemedi.");
             }
+
+            bird.ImageUrl = imageUrl;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { ImageUrl = bird.ImageUrl });
         }
-
-        bird.ImageUrl = $"/images/birds/{uniqueFileName}";
-        await _context.SaveChangesAsync();
-
-        return Ok(new { ImageUrl = bird.ImageUrl });
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Yükleme hatası: {ex.Message}");
+        }
     }
 }

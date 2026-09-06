@@ -70,7 +70,7 @@ const BirdModal = ({ isOpen, onClose, onSave, birdsList, initialData = null }) =
         motherId: initialData.motherId || '',
         fatherId: initialData.fatherId || ''
       });
-      setImagePreview(initialData.imageUrl ? `http://localhost:5010${initialData.imageUrl}` : null);
+      setImagePreview(initialData.imageUrl ? (initialData.imageUrl.startsWith("http") ? initialData.imageUrl : `http://localhost:5010${initialData.imageUrl}`) : null);
     } else {
       setImagePreview(null);
       // Calculate next band number
