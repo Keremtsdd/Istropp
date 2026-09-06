@@ -55,6 +55,7 @@ const NestDetail = ({ nest, onBack }) => {
   const { pairs, eggs, birds, pairBirds, registerEgg, registerHatch, deleteEgg } = useData();
   const [selectedMale, setSelectedMale] = useState('');
   const [selectedFemale, setSelectedFemale] = useState('');
+  const [newEggDate, setNewEggDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Find active pair for this nest
   const activePair = pairs.find(p => p.nestId === nest.id && p.isActive);
@@ -92,8 +93,7 @@ const NestDetail = ({ nest, onBack }) => {
 
   const handleAddEgg = () => {
     if(!activePair) return;
-    const today = new Date().toISOString().split('T')[0];
-    registerEgg(activePair.id, today);
+    registerEgg(activePair.id, newEggDate);
   };
 
   const handleHatch = (eggId) => {
@@ -221,12 +221,21 @@ const NestDetail = ({ nest, onBack }) => {
                   <Egg size={22} className="text-amber-500" />
                   <h3 className="text-lg font-bold text-slate-800">Yumurtalar</h3>
                 </div>
-                <button 
-                  onClick={handleAddEgg}
-                  className="flex items-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-md shadow-amber-500/20"
-                >
-                  <Plus size={18} /> Yeni Yumurta Ekle
-                </button>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="date" 
+                    value={newEggDate} 
+                    onChange={(e) => setNewEggDate(e.target.value)}
+                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 h-[42px]"
+                    title="Yumurtlama Tarihi"
+                  />
+                  <button 
+                    onClick={handleAddEgg}
+                    className="flex items-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white px-5 h-[42px] rounded-xl font-bold text-sm transition-all shadow-md shadow-amber-500/20"
+                  >
+                    <Plus size={18} /> Yeni Yumurta Ekle
+                  </button>
+                </div>
               </div>
 
               {pairEggs.length === 0 ? (

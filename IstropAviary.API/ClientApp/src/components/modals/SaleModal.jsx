@@ -160,7 +160,9 @@ const SaleModal = ({ isOpen, onClose, onSave, birds, initialData = null }) => {
       alert("Lütfen en az bir kuş seçin.");
       return;
     }
-    onSave(formData);
+    const parsedPrice = parseFloat(String(formData.price).replace(/\./g, '').replace(/,/g, '.'));
+    const submitData = { ...formData, price: parsedPrice || 0 };
+    onSave(submitData);
     setFormData({ birdIds: [], buyerName: '', buyerPhone: '', buyerAddress: '', price: '', date: '', status: 'Beklemede', notes: '' });
     onClose();
   };
@@ -234,7 +236,7 @@ const SaleModal = ({ isOpen, onClose, onSave, birds, initialData = null }) => {
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Fiyat (₺) *</label>
                 <input autoComplete="off" 
-                  required type="number" name="price" value={formData.price} onChange={handleChange}
+                  required type="text" name="price" value={formData.price} onChange={handleChange}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
                 />
               </div>

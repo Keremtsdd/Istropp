@@ -61,7 +61,7 @@ const CustomDropdown = ({ icon, label, options, value, onChange }) => {
 };
 
 const Birds = () => {
-  const { birds, addBird, deleteBird, loading: dataLoading } = useData();
+  const { birds, addBird, deleteBird, loading: dataLoading, pairs, nests, sales } = useData();
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -85,17 +85,37 @@ const Birds = () => {
     return <BirdDetail bird={currentSelectedBird} onBack={() => setSelectedBird(null)} />;
   }
 
-  const filteredBirds = birds.filter(bird => {
+  const enhancedBirds = birds.map(bird => {
+    let customStatus = bird.status;
+    let nCode = bird.nestCode || '';
+
+    // Check sales for "Beklemede"
+    const saleInfo = sales?.find(s => s.saleDetails?.some(sd => sd.birdId === bird.id));
+    if (saleInfo && saleInfo.paymentType === 'Beklemede') {
+       customStatus = 'Pending';
+    }
+
+    // Check nests for active pair
+    const activePair = pairs?.find(p => (p.maleId === bird.id || p.femaleId === bird.id) && p.isActive);
+    if (activePair) {
+      const nest = nests?.find(n => n.id === activePair.nestId);
+      if (nest) nCode = nest.nestCode;
+    }
+
+    return { ...bird, derivedNestCode: nCode, derivedStatus: customStatus };
+  });
+
+  const filteredBirds = enhancedBirds.filter(bird => {
     const searchMatch = bird.bandNumber?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                         bird.notes?.toLowerCase().includes(searchTerm.toLowerCase());
     
     let statusMatch = true;
     if (filterStatus !== 'Tümü') {
-      const dbStatus = String(bird.status);
+      const dbStatus = String(bird.derivedStatus);
       statusMatch = dbStatus === filterStatus || 
                    (filterStatus === '1' && (dbStatus === 'Available' || dbStatus === 'Breeder' || dbStatus === 'Damızlık')) ||
                    (filterStatus === '2' && (dbStatus === 'Chick' || dbStatus === 'Yavru')) ||
-                   (filterStatus === '4' && (dbStatus === 'Sold' || dbStatus === 'Satılık'));
+                   (filterStatus === '4' && (dbStatus === 'Sold' || dbStatus === 'Satılık' || dbStatus === 'Pending'));
     }
 
     let genderMatch = true;
@@ -147,6 +167,8 @@ const Birds = () => {
       case 'Sold':
       case 'Satılık':
         return { bg: 'bg-blue-100', text: 'text-blue-700', dot: 'bg-blue-500', label: 'Satılık' };
+      case 'Pending':
+        return { bg: 'bg-purple-100', text: 'text-purple-700', dot: 'bg-purple-500', label: 'Beklemede (Kapora)' };
       case 'Deceased':
       case 'Tedavide':
       case 'Resting':
@@ -301,7 +323,7 @@ const Birds = () => {
                   </tr>
                 ) : (
                   displayedBirds.map((bird) => {
-                    const statusInfo = getStatusStyle(bird.status);
+                    const statusInfo = getStatusStyle(bird.derivedStatus);
                     const isMale = bird.gender === 0 || bird.gender === '0' || bird.gender === 'Male' || bird.gender === 'Erkek';
                     const isUnknown = bird.gender === 2 || bird.gender === '2' || bird.gender === 'Unknown' || bird.gender === 'Bilinmiyor';
                     return (
@@ -334,7 +356,7 @@ const Birds = () => {
                           </span>
                         </td>
                         <td className="px-4 py-4 text-slate-600 font-medium">
-                          {bird.nestCode || (bird.aviaryName || '-')}
+                          {bird.derivedNestCode || (bird.aviaryName || '-')}
                         </td>
                         <td className="px-4 py-4 text-slate-600 text-sm max-w-xs truncate" title={bird.notes}>
                           {bird.notes || '-'}
@@ -376,7 +398,7 @@ const Birds = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {displayedBirds.map(bird => {
-            const statusInfo = getStatusStyle(bird.status);
+            const statusInfo = getStatusStyle(bird.derivedStatus);
             const isMale = bird.gender === 0 || bird.gender === '0' || bird.gender === 'Male' || bird.gender === 'Erkek';
             const isUnknown = bird.gender === 2 || bird.gender === '2' || bird.gender === 'Unknown' || bird.gender === 'Bilinmiyor';
             return (
@@ -416,7 +438,7 @@ const Birds = () => {
                   </span>
                 </div>
                 <div className="text-xs text-slate-500 border-t border-slate-50 pt-2">
-                  <span className="font-semibold text-slate-600">Yuvalık:</span> {bird.aviaryName || '-'}
+                  <span className="font-semibold text-slate-600">Yuvalık:</span> {bird.derivedNestCode || (bird.aviaryName || '-')}
                 </div>
               </div>
             );

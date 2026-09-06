@@ -40,7 +40,7 @@ const Dashboard = () => {
   const navItems = [
     { title: 'Kuşlar', desc: 'Kuş envanterini ve soyağacını yönet', icon: <Bird size={28} />, path: '/birds', color: 'bg-blue-50 text-blue-600', hover: 'hover:border-blue-200 hover:shadow-blue-100' },
     { title: 'Yuvalıklar', desc: 'Kuluçka ve yumurta takibi yap', icon: <Home size={28} />, path: '/nests', color: 'bg-orange-50 text-orange-600', hover: 'hover:border-orange-200 hover:shadow-orange-100' },
-    { title: 'Bakım Planı', desc: 'İlaç ve beslenme takvimini düzenle', icon: <ClipboardList size={28} />, path: '/care-plans', color: 'bg-teal-50 text-teal-600', hover: 'hover:border-teal-200 hover:shadow-teal-100' },
+    { title: 'Bakım Planı', desc: 'İlaç ve beslenme takvimini düzenle', icon: <ClipboardList size={28} />, path: '/careplans', color: 'bg-teal-50 text-teal-600', hover: 'hover:border-teal-200 hover:shadow-teal-100' },
     { title: 'Satış', desc: 'Satışları ve rezervasyonları izle', icon: <ShoppingCart size={28} />, path: '/sales', color: 'bg-purple-50 text-purple-600', hover: 'hover:border-purple-200 hover:shadow-purple-100' },
     { title: 'Gelir / Gider', desc: 'Finansal işlemleri kontrol et', icon: <DollarSign size={28} />, path: '/transactions', color: 'bg-green-50 text-green-600', hover: 'hover:border-green-200 hover:shadow-green-100' },
     { title: 'Raporlar', desc: 'İşletme istatistiklerini analiz et', icon: <BarChart2 size={28} />, path: '/reports', color: 'bg-indigo-50 text-indigo-600', hover: 'hover:border-indigo-200 hover:shadow-indigo-100' },
