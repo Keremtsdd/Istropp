@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Settings, ChevronDown, LogOut, User } from 'lucide-react';
+import { Settings, ChevronDown, LogOut, User, Menu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 
-const Topnav = () => {
+const Topnav = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -28,10 +28,18 @@ const Topnav = () => {
   const initials = 'EM';
 
   return (
-    <div className="h-16 bg-white/70 backdrop-blur-md border-b border-slate-100 flex items-center justify-end px-8 z-10 sticky top-0">
+    <div className="h-16 bg-white/70 backdrop-blur-md border-b border-slate-100 flex items-center justify-between md:justify-end px-4 md:px-8 z-10 sticky top-0">
       
-      <div className="flex items-center gap-6">
-        <Link to="/settings" className="text-slate-500 hover:text-slate-800 transition-colors">
+      {/* Mobile Menu Toggle */}
+      <button 
+        className="md:hidden p-2 -ml-2 text-slate-500 hover:text-brand-600 focus:outline-none"
+        onClick={onMenuClick}
+      >
+        <Menu size={24} />
+      </button>
+
+      <div className="flex items-center gap-4 md:gap-6">
+        <Link to="/settings" className="text-slate-500 hover:text-slate-800 transition-colors hidden md:block">
           <Settings size={20} />
         </Link>
         

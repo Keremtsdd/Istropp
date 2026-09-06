@@ -200,8 +200,8 @@ const Transactions = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[600px]">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="bg-slate-50/50 text-xs text-slate-400 font-semibold border-b border-slate-100">
                   <th className="p-4 pl-6">Tarih</th>

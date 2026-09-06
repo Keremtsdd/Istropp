@@ -269,8 +269,8 @@ const Birds = () => {
       {/* Content Area */}
       {viewMode === 'list' ? (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse min-w-[1000px]">
               <thead>
                 <tr className="bg-white border-b border-slate-100">
                   <th className="px-6 py-4 w-12">

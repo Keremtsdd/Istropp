@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Bird, Home, DollarSign, List, Calendar, FileText, Settings } from 'lucide-react';
 
-const Sidebar = () => {
+const Sidebar = ({ onClose }) => {
   const menus = [
     { name: 'Ana Sayfa', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: 'Kuşlar', path: '/birds', icon: <Bird size={20} /> },
@@ -29,6 +29,9 @@ const Sidebar = () => {
           <NavLink
             key={menu.name}
             to={menu.path}
+            onClick={() => {
+              if (onClose) onClose();
+            }}
             className={({ isActive }) =>
               `flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 ${
                 isActive 
