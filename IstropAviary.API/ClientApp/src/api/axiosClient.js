@@ -1,7 +1,19 @@
 import axios from 'axios';
+import axiosRetry from 'axios-retry';
 
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5010/api', 
+});
+
+axiosRetry(axiosClient, {
+  retries: 10,
+  retryDelay: () => {
+    return 3000; // wait 3s between retries
+  },
+  retryCondition: (error) => {
+    // Retry on network errors or 5xx status codes
+    return axiosRetry.isNetworkOrIdempotentRequestError(error) || error.code === 'ECONNABORTED' || (error.response && error.response.status >= 500);
+  }
 });
 
 // Add a request interceptor to attach the JWT token

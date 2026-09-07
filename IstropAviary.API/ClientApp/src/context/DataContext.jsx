@@ -1,11 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 const DataContext = createContext();
 
 export const useData = () => useContext(DataContext);
 
 export const DataProvider = ({ children }) => {
+  const { user } = useAuth();
   const [birds, setBirds] = useState([]);
   const [nests, setNests] = useState([]);
   const [sales, setSales] = useState([]);
@@ -50,12 +52,23 @@ export const DataProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    import('../api/axiosClient').then(module => {
-      const client = module.default;
-      setApiClient(() => client);
-      refreshData(client);
-    });
-  }, []);
+    if (user) {
+      import('../api/axiosClient').then(module => {
+        const client = module.default;
+        setApiClient(() => client);
+        refreshData(client);
+      });
+    } else {
+      setBirds([]);
+      setNests([]);
+      setPairs([]);
+      setCarePlans([]);
+      setSales([]);
+      setTransactions([]);
+      setEggs([]);
+      setLoading(false);
+    }
+  }, [user]);
 
 
 
